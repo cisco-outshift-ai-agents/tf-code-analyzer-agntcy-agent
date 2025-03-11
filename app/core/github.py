@@ -1,0 +1,99 @@
+import io
+import os
+import zipfile
+import logging
+from http import HTTPStatus
+import requests
+from fastapi import HTTPException
+from pydantic import BaseModel, HttpUrl
+from github import Github, GithubException
+from urllib.parse import urlparse
+
+logger = logging.getLogger(__name__)
+
+class GithubRequest(BaseModel):
+    repo_url: str  # GitHub repository URL
+    github_token: str  # GitHub PAT
+    branch: str   # Branch name to download
+
+class GithubClient:
+    def __init__(self, github_token: str):
+        self.token = github_token
+        self.client = self._authenticate(github_token)
+
+    def _authenticate(self, github_token: str) -> Github:
+        try:
+            g = Github(github_token)
+            user = g.get_user()
+            logger.info(f"Authenticated user: {user.login}")
+            return g
+        except GithubException as e:
+            logger.error(f"GitHub authentication failed: {e}")
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Invalid GitHub token"
+            )
+
+    def download_repo_zip(self, repo_url: str, branch: str, destination_folder: str) -> str:
+        """
+        Downloads a zipball of the specified branch from the provided GitHub repository URL,
+        unzips it into the destination folder, and returns the path to the extracted folder.
+
+        :param repo_url: User-provided GitHub repository URL.
+        :param branch: Branch name (e.g., "main", "master").
+        :param destination_folder: Local folder where the repository should be extracted.
+        :return: Full path to the extracted repository folder (destination_folder/folder_name).
+        """
+        try:
+            # Parse the URL using urlparse
+            parsed_url = urlparse(repo_url)
+            if parsed_url.netloc.lower() != "github.com":
+                raise ValueError("The provided URL is not a GitHub URL.")
+
+            # Split the path into parts, filtering out empty parts
+            path_parts = [part for part in parsed_url.path.split("/") if part]
+            if len(path_parts) < 2:
+                raise ValueError("Invalid GitHub repository URL format. Expected format: https://github.com/<owner>/<repo>")
+
+            # Extract owner and repository name
+            owner, repo = path_parts[0], path_parts[1]
+            logger.info(f"Extracted owner: {owner}, repo: {repo}")
+
+            # Build the GitHub API URL to download the zipball for the specified branch.
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/zipball/{branch}"
+            logger.info(f"Downloading zipball from: {api_url}")
+
+            headers = {
+                "Authorization": f"token {self.token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+
+            # Make the GET request with stream enabled.
+            response = requests.get(api_url, headers=headers, stream=True)
+            response.raise_for_status()  # Raises an HTTPError for bad responses
+
+            # Read the response content into a BytesIO object.
+            zip_data = io.BytesIO()
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    zip_data.write(chunk)
+            zip_data.seek(0)
+
+            # Open the zip file from memory and extract its contents.
+            with zipfile.ZipFile(zip_data, "r") as zip_ref:
+                file_list = zip_ref.namelist()
+                if not file_list:
+                    raise ValueError("Downloaded zip file is empty or corrupted.")
+                
+                # Assuming the first entry contains the root folder name.
+                folder_name = file_list[0].split("/")[0]
+                extract_path = os.path.join(destination_folder)
+                zip_ref.extractall(extract_path)
+
+            extracted_repo_path = os.path.join(destination_folder, folder_name)
+            logger.info(f"Repository extracted successfully to '{extracted_repo_path}'")
+            return extracted_repo_path
+
+        except Exception as e:
+            logger.exception("Failed to download and extract GitHub repository")
+            raise

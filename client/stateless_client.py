@@ -3,6 +3,7 @@
 
 import os
 import traceback
+import uuid
 
 from dotenv import load_dotenv, find_dotenv
 from fastapi import requests
@@ -22,17 +23,30 @@ logger = logging.getLogger(__name__)
 load_environment_variables()
 
 # configure remote server
-port = int(os.getenv("PORT", "8123"))
-host = os.getenv("HOST", "127.0.0.1")
+port = int(os.getenv("TF_CODE_ANALYZER_PORT", "8133"))
+host = os.getenv("TF_CODE_ANALYZER_HOST", "127.0.0.1")
 REMOTE_SERVER_URL = f"http://{host}:{port}/api/v1/runs"
 logging.info(f"Remote server URL: {REMOTE_SERVER_URL}")
+
+def fetch_github_environment_variables() -> Dict[str, str]:
+    """
+    Fetches the GitHub environment variables from the system.
+    
+    Returns:
+        Dict[str, str]: A dictionary containing the GitHub environment variables.
+    """
+    github = {
+        "repo_url": os.getenv("GITHUB_REPO_URL"),
+        "github_token": os.getenv("GITHUB_TOKEN"),
+        "branch": os.getenv("GITHUB_BRANCH")
+    }
+    return github
 
 # Define the graph state
 class GraphState(TypedDict):
     """Represents the state of the graph, containing the file_path."""
-    file_path: str
-    output: Dict[str, str]
-
+    github: Dict[str, str]
+    static_analyzer_output: str
 
 def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -44,8 +58,8 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: The updated state of the graph after processing the request.
     """
-    if "file_path" not in state or not state["file_path"]:
-        error_msg = "GraphState is missing file_path"
+    if "github" not in state or not state["github"]:
+        error_msg = "GraphState is missing 'github' key"
         logger.error(json.dumps({"error": error_msg}))
         return {"error": error_msg}
 
@@ -55,7 +69,10 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
     }
 
     payload = {
-        "input": {"file_path": state["file_path"]}
+        "agent_id": "remote_agent",
+        "model": "gpt-4o",
+        "metadata": {"id": str(uuid.uuid4())},
+        "input": {"github": state["github"]}
     }
     logger.info(f"Sending request to remote server with payload: {payload}")
 
@@ -66,14 +83,19 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
             response.raise_for_status()  # Raises HTTPError for 4xx and 5xx
 
             try:
-                response_data = response.json()  # Validate JSON response
+                # Raise exception for HTTP errors
+                response.raise_for_status()
+                # Parse response as JSON
+                response_data = response.json()
+                # Decode JSON response
+                decoded_response = decode_response(response_data)
+                logger.info(decoded_response)
+
+                return {"static_analyzer_output": decoded_response.get("static_analyzer_output", "")}
             except json.JSONDecodeError as json_err:
                 error_msg = "Invalid JSON response from server"
                 logger.error(json.dumps({"error": error_msg, "exception": str(json_err)}))
                 return {"error": error_msg}
-            
-            logger.info(f"Received response from remote server: {response_data}")
-            return {"output": response_data}
         except (Timeout, ConnectionError) as conn_err:
             error_msg = "Connection timeout or failure"
             logger.error(json.dumps({"error": error_msg, "exception": str(conn_err)}))
@@ -98,6 +120,35 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
             }))
             return {"error": error_msg}
 
+def decode_response(response_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Decodes the JSON response from the remote server and extracts relevant information.
+
+    Args:
+        response_data (Dict[str, Any]): The JSON response from the server.
+
+    Returns:
+        Dict[str, Any]: A structured dictionary containing extracted response fields.
+    """
+    try:
+        agent_id = response_data.get("agent_id", "Unknown")
+        output = response_data.get("output", {})
+        model = response_data.get("model", "Unknown")
+        metadata = response_data.get("metadata", {})
+
+        # Extract messages if present
+        static_analyzer_output = output.get("static_analyzer_output", [])
+
+        return {
+            "agent_id": agent_id,
+            "static_analyzer_output": static_analyzer_output,
+            "model": model,
+            "metadata": metadata,
+        }
+    except Exception as e:
+        return {"error": f"Failed to decode response: {str(e)}"}
+
+
 def build_graph() -> any:
     """
     Constructs the state graph for handling request with the Remote Graph Server.
@@ -113,9 +164,8 @@ def build_graph() -> any:
 
 if __name__ == "__main__":
     graph = build_graph()
-    # get current file path as string
-    test_files_path = f"{os.path.dirname(os.path.abspath(__file__))}/test_files"
-    input = {"file_path": test_files_path}
+    github_details = fetch_github_environment_variables()
+    input = {"github": github_details}
     logger.info({"event": "invoking_graph", "input": input})
     result = graph.invoke(input)
     if "output" in result:

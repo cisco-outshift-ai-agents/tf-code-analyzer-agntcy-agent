@@ -3,14 +3,15 @@
 
 from __future__ import annotations
 
+from http import HTTPStatus
 import logging
 
 from fastapi import APIRouter, HTTPException, Response, status
 from fastapi.responses import JSONResponse
 from app.models.models import Any, ErrorResponse, RunCreateStateless, Union
 from app.graph.graph import StaticAnalyzerWorkflow
-from app.core.config import get_llm_chain
-
+from app.core.config import settings, get_llm_chain
+from app.core.github import GithubRequest, GithubClient
 
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)  # This will be "app.api.routes.<name>"
@@ -32,28 +33,53 @@ def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorRespons
     Create Background Run
     """
     try:
-        #TODO: modify the input and output based on decision for communication between agents
+        # Extract assistant_id from the payload
+        agent_id = body.agent_id
+        logging.debug(f"Agent id: {agent_id}")
+
+        # Validate that the assistant_id is not empty.
+        if not body.agent_id:
+            msg = "agent_id is required and cannot be empty."
+            logging.error(msg)
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=msg,
+            )
 
         # -----------------------------------------------
-        # Extract the file path to the Terraform files from the payload.
-        # We expect the content to be located at: payload["input"]["file_path"]
+        # Extract the Github details from the input.
+        # We expect the content to be located at: payload["input"]["github"]
         # -----------------------------------------------
 
         # Retrieve the 'input' field and ensure it is a dictionary.
         input_field = body.input
         if not isinstance(input_field, dict):
-            raise ValueError("The 'input' field should be a dictionary.")
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Invalid input format")
 
-        # Retrieve the 'file_path' field from the input dictionary.
-        file_path = input_field.get("file_path")
+        # Retrieve the 'github' field from the input dictionary.
+        github_data = input_field.get("github")
 
         # Ensure that the 'file_path' field is a string.
-        if not isinstance(file_path, str):
-            raise ValueError("The 'file_path' field should be a string.")
+        if not isinstance(github_data, dict):
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Invalid GitHub data format")
+        
+        # Extract the Github details from the input.
+        github_request = GithubRequest(**github_data)
+
+        # Initialize the Github client and download the repository.
+        github_client = GithubClient(github_request.github_token)
+        try:
+            file_path = github_client.download_repo_zip(
+                repo_url=github_request.repo_url,
+                branch=github_request.branch,
+                destination_folder=settings.DESTINATION_FOLDER,
+            )
+        except Exception as e:
+            logger.error(f"Download failed: {e}")
+            raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
         
         result = workflow.analyze(file_path)
     except HTTPException as http_exc:
-        # Log HTTP exceptions and re-raise them so that FastAPI can generate the appropriate response.
         logger.error("HTTP error during run processing: %s", http_exc.detail)
         raise http_exc
     except Exception as exc:
@@ -63,7 +89,13 @@ def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorRespons
             detail=exc,
         )
 
-    return JSONResponse(content=result, status_code=status.HTTP_200_OK)
+    payload = {
+        "agent_id": agent_id,
+        "output": result,
+        "model": settings.OPENAI_API_VERSION,
+        "metadata": {}
+    }
+    return JSONResponse(content=payload, status_code=status.HTTP_200_OK)
 
 @router.post(
     "/runs/stream",

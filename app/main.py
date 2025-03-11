@@ -12,10 +12,10 @@ from fastapi.responses import FileResponse
 from starlette.middleware.cors import CORSMiddleware
 import uvicorn
 
-from api.routes import stateless_runs
-from core.logging_config import configure_logging
-from core.config import settings
-from core.utils import *
+from app.api.routes import stateless_runs
+from app.core.config import settings
+from app.core.logging_config import configure_logging
+from app.core.utils import *
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -157,17 +157,11 @@ def main() -> None:
     # Load environment variables before starting the application
     load_environment_variables()
 
-    # Determine port number from environment variables or use the default
-    port = int(os.getenv("PORT", "8123"))
-
-    # Determine the host address from environment variables or use the default
-    host = os.getenv("HOST", "127.0.0.1")
-
     # Start the FastAPI application using Uvicorn
     uvicorn.run(
         create_app(),
-        host=host,
-        port=port,
+        host=settings.TF_CODE_ANALYZER_HOST,
+        port=settings.TF_CODE_ANALYZER_PORT,
         log_level="info",
     )
 
