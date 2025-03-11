@@ -1,21 +1,20 @@
-from __future__ import annotations
-
-from contextlib import asynccontextmanager
-import os
 import logging
+import os
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
-from dotenv import load_dotenv, find_dotenv
 
-from fastapi import FastAPI
-from fastapi.routing import APIRoute
-from fastapi.responses import FileResponse
-from starlette.middleware.cors import CORSMiddleware
 import uvicorn
+from dotenv import find_dotenv, load_dotenv
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.routing import APIRoute
+from starlette.middleware.cors import CORSMiddleware
 
 from app.api.routes import stateless_runs
 from app.core.config import settings
 from app.core.logging_config import configure_logging
 from app.core.utils import *
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:

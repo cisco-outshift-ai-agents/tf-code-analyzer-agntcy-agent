@@ -1,8 +1,10 @@
-from dotenv import load_dotenv, find_dotenv
 import logging
 import os
 import zipfile
 from pathlib import Path
+
+from dotenv import find_dotenv, load_dotenv
+
 
 def extract_zipfile(zip_path: str, extract_path: str):
     """
@@ -15,9 +17,12 @@ def extract_zipfile(zip_path: str, extract_path: str):
     Returns:
     None
     """
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(extract_path)
-    print(f"Extracted contents from '{os.path.basename(zip_path)}' to '{extract_path}' directory.")
+    print(
+        f"Extracted contents from '{os.path.basename(zip_path)}' to '{extract_path}' directory."
+    )
+
 
 def check_path_type(path: str) -> str:
     """
@@ -30,13 +35,14 @@ def check_path_type(path: str) -> str:
     str: 'zip' if it's a zip file, 'directory' if it's a directory, 'other' otherwise
     """
     path_obj = Path(path)
-    
-    if path_obj.is_file() and path_obj.suffix.lower() == '.zip':
-        return 'zip'
+
+    if path_obj.is_file() and path_obj.suffix.lower() == ".zip":
+        return "zip"
     elif path_obj.is_dir():
-        return 'directory'
+        return "directory"
     else:
-        return 'other'
+        return "other"
+
 
 def load_environment_variables(env_file: str | None = None) -> None:
     """

@@ -1,18 +1,17 @@
 # Description: This file contains a sample graph client that makes a stateless request to the Remote Graph Server.
 # Usage: python client/stateless_client.py
 
+import json
+import logging
 import os
 import traceback
 import uuid
+from typing import Any, Dict, TypedDict
 
-from dotenv import load_dotenv, find_dotenv
-from fastapi import requests
-import json
-from langgraph.graph import END, START, StateGraph
-import logging
 import requests
-from requests.exceptions import RequestException, Timeout, HTTPError, ConnectionError
-from typing import Dict, TypedDict, Any
+from langgraph.graph import END, START, StateGraph
+from requests.exceptions import (ConnectionError, HTTPError, RequestException,
+                                 Timeout)
 
 from app.core.logging_config import configure_logging
 from app.core.utils import *
@@ -28,33 +27,39 @@ host = os.getenv("TF_CODE_ANALYZER_HOST", "127.0.0.1")
 REMOTE_SERVER_URL = f"http://{host}:{port}/api/v1/runs"
 logging.info(f"Remote server URL: {REMOTE_SERVER_URL}")
 
+
 def fetch_github_environment_variables() -> Dict[str, str]:
     """
     Fetches the GitHub environment variables from the system.
-    
+
     Returns:
         Dict[str, str]: A dictionary containing the GitHub environment variables.
     """
     github = {
         "repo_url": os.getenv("GITHUB_REPO_URL"),
         "github_token": os.getenv("GITHUB_TOKEN"),
-        "branch": os.getenv("GITHUB_BRANCH")
+        "branch": os.getenv("GITHUB_BRANCH"),
     }
     return github
 
+
 # Define the graph state
+
+
 class GraphState(TypedDict):
     """Represents the state of the graph, containing the file_path."""
+
     github: Dict[str, str]
     static_analyzer_output: str
+
 
 def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Handles a stateless request to the Remote Graph Server.
-    
+
     Args:
         state (Dict[str, Any]): The current state of the graph.
-    
+
     Returns:
         Dict[str, Any]: The updated state of the graph after processing the request.
     """
@@ -72,7 +77,7 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
         "agent_id": "remote_agent",
         "model": "gpt-4o",
         "metadata": {"id": str(uuid.uuid4())},
-        "input": {"github": state["github"]}
+        "input": {"github": state["github"]},
     }
     logger.info(f"Sending request to remote server with payload: {payload}")
 
@@ -83,18 +88,22 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
             response.raise_for_status()  # Raises HTTPError for 4xx and 5xx
 
             try:
-                # Raise exception for HTTP errors
-                response.raise_for_status()
                 # Parse response as JSON
                 response_data = response.json()
                 # Decode JSON response
                 decoded_response = decode_response(response_data)
                 logger.info(decoded_response)
 
-                return {"static_analyzer_output": decoded_response.get("static_analyzer_output", "")}
+                return {
+                    "static_analyzer_output": decoded_response.get(
+                        "static_analyzer_output", ""
+                    )
+                }
             except json.JSONDecodeError as json_err:
                 error_msg = "Invalid JSON response from server"
-                logger.error(json.dumps({"error": error_msg, "exception": str(json_err)}))
+                logger.error(
+                    json.dumps({"error": error_msg, "exception": str(json_err)})
+                )
                 return {"error": error_msg}
         except (Timeout, ConnectionError) as conn_err:
             error_msg = "Connection timeout or failure"
@@ -113,12 +122,17 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
 
         except Exception as e:
             error_msg = "Unexpected failure"
-            logger.error(json.dumps({
-                "error": error_msg,
-                "exception": str(e),
-                "stack_trace": traceback.format_exc()
-            }))
+            logger.error(
+                json.dumps(
+                    {
+                        "error": error_msg,
+                        "exception": str(e),
+                        "stack_trace": traceback.format_exc(),
+                    }
+                )
+            )
             return {"error": error_msg}
+
 
 def decode_response(response_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -152,7 +166,7 @@ def decode_response(response_data: Dict[str, Any]) -> Dict[str, Any]:
 def build_graph() -> any:
     """
     Constructs the state graph for handling request with the Remote Graph Server.
-    
+
     Returns:
         StateGraph: A compiled LangGraph state graph.
     """
@@ -161,6 +175,7 @@ def build_graph() -> any:
     builder.add_edge(START, "node_remote_request_stateless")
     builder.add_edge("node_remote_request_stateless", END)
     return builder.compile()
+
 
 if __name__ == "__main__":
     graph = build_graph()

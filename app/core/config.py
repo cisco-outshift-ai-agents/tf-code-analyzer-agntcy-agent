@@ -1,18 +1,18 @@
-import os
-from typing import Any, List, Optional, Union, Literal
+import logging
+from typing import Any, List, Literal, Optional, Union
 
-from pydantic import model_validator
-from pydantic_settings import BaseSettings
 from langchain_community.chat_models import ChatOpenAI
 from langchain_openai import AzureChatOpenAI
+from pydantic import model_validator
+from pydantic_settings import BaseSettings
 
-import logging
-
+# Error messages
+INTERNAL_ERROR_MESSAGE = "An unexpected error occurred. Please try again later."
 
 def parse_cors(v: Any) -> Union[List[str], str]:
     if isinstance(v, str) and not v.startswith("["):
         return [i.strip() for i in v.split(",")]
-    elif isinstance(v, (list, str)):
+    if isinstance(v, (list, str)):
         return v
     raise ValueError(v)
 
@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     # Mandatory LLM settings
     LLM_PROVIDER: str = "azure"  # or "openai"
     OPENAI_TEMPERATURE: float = 0.7
- 
+
     # Azure settings
     AZURE_OPENAI_ENDPOINT: Optional[str] = None
     AZURE_OPENAI_DEPLOYMENT_NAME: Optional[str] = "gpt-4o"
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     # OpenAI settings
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_API_VERSION: Optional[str] = "gpt-4o"
-    
+
     # Validate LLM settings
     @model_validator(mode="after")
     def check_required_settings(self) -> "Settings":
@@ -68,7 +68,9 @@ class Settings(BaseSettings):
                 )
         elif provider == "openai":
             if not self.OPENAI_API_KEY:
-                raise ValueError("Missing required OpenAI environment variable: OPENAI_API_KEY")
+                raise ValueError(
+                    "Missing required OpenAI environment variable: OPENAI_API_KEY"
+                )
         else:
             raise ValueError(f"Unsupported LLM provider: {provider}")
         return self
@@ -76,6 +78,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         extra = "ignore"  # This will ignore any extra environment variables.
+
 
 settings = Settings()
 
@@ -92,13 +95,12 @@ def get_llm_chain():
             azure_deployment=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
             openai_api_key=settings.AZURE_OPENAI_API_KEY,
             api_version=settings.AZURE_OPENAI_API_VERSION,
-            temperature=temperature
+            temperature=temperature,
         )
-    elif provider == "openai":
+    if provider == "openai":
         return ChatOpenAI(
             model_name=settings.OPENAI_API_VERSION,
             api_key=settings.OPENAI_API_KEY,
-            temperature=temperature
+            temperature=temperature,
         )
-    else:
-        raise ValueError(f"Unsupported LLM provider: {provider}")
+    raise ValueError(f"Unsupported LLM provider: {provider}")

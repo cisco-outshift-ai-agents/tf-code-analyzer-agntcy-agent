@@ -1,12 +1,14 @@
 from langchain_core.runnables import RunnableSerializable
 from langgraph.graph import END, Graph
+
 from .static_analyzer import StaticAnalyzer
+
 
 class StaticAnalyzerWorkflow:
     def __init__(self, chain: RunnableSerializable):
         """
         Initialize the StaticAnalyzerWorkflow as a LangGraph workflow.
-        
+
         Args:
             chain (RunnableSerializable): A callable LLM chain that runs the static analysis.
         """
@@ -25,7 +27,8 @@ class StaticAnalyzerWorkflow:
         # Create the StaticAnalyzer node
         analyzer = StaticAnalyzer(self.chain)
 
-        # Wrapper function to handle LangGraph input and ensure correct return format
+        # Wrapper function to handle LangGraph input and ensure correct return
+        # format
         def review_node(input_data):
             """
             Node function for running the static analysis.
@@ -42,13 +45,13 @@ class StaticAnalyzerWorkflow:
             except Exception as e:
                 raise Exception(f"Failed to process analysis: {e}")
             return result
-    
+
         # Add the StaticAnalyzer node to the graph
         graph.add_node("static_analyzer", review_node)
 
         # Set Graph edges
         graph.set_entry_point("static_analyzer")
-        graph.add_edge("static_analyzer",END)
+        graph.add_edge("static_analyzer", END)
 
         return graph.compile()
 
@@ -58,15 +61,13 @@ class StaticAnalyzerWorkflow:
 
         Args:
             context_files str: Path to folder or zip file containing Terraform files.
-        
+
         Returns:
-            dict: Output data containing `static_analyzer_output` as structured linter results.   
+            dict: Output data containing `static_analyzer_output` as structured linter results.
         """
         try:
-            result = self.graph.invoke(
-                {"file_path": context_files}
-            )
+            result = self.graph.invoke({"file_path": context_files})
         except Exception as e:
             raise Exception("Terraform analysis failed")
-        
+
         return result
