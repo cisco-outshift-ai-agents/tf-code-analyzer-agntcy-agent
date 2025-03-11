@@ -128,8 +128,6 @@ You need to install Rust: <https://www.rust-lang.org/tools/install>
 
 Run the server
 
-Change to `client` folder
-
 ```bash
 langgraph dev
 ```
