@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     - On shutdown: Logs a shutdown message.
     - Can be extended to initialize resources (e.g., database connections).
     """
-    logging.info("Starting Remote Graphs App...")
+    logging.info("Starting Terraform Code Analyzer Agent")
 
     # Example: Attach database connection to app state (if needed)
     # app.state.db = await init_db_connection()
