@@ -4,21 +4,28 @@
 import json
 import logging
 import os
+import sys
 import traceback
 import uuid
 from typing import Any, Dict, TypedDict
 
 import requests
+from dotenv import find_dotenv, load_dotenv
 from langgraph.graph import END, START, StateGraph
-from requests.exceptions import ConnectionError, HTTPError, RequestException, Timeout
+from requests.exceptions import (ConnectionError, HTTPError, RequestException,
+                                 Timeout)
+
+# Get the absolute path of the parent directory
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# Add the parent directory to sys.path
+sys.path.insert(0, parent_dir)
 
 from app.core.logging_config import configure_logging
-from app.core.utils import *
+from app.core.utils import load_environment_variables
 
 logger = configure_logging()
-logger = logging.getLogger(__name__)
 
-load_environment_variables()
 
 # configure remote server
 port = int(os.getenv("TF_CODE_ANALYZER_PORT", "8133"))
@@ -27,7 +34,7 @@ REMOTE_SERVER_URL = f"http://{host}:{port}/api/v1/runs"
 logging.info(f"Remote server URL: {REMOTE_SERVER_URL}")
 
 
-def fetch_github_environment_variables() -> Dict[str, str]:
+def fetch_github_environment_variables() -> Dict[str, str | None]:
     """
     Fetches the GitHub environment variables from the system.
 
@@ -162,7 +169,7 @@ def decode_response(response_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"error": f"Failed to decode response: {str(e)}"}
 
 
-def build_graph() -> any:
+def build_graph() -> Any:
     """
     Constructs the state graph for handling request with the Remote Graph Server.
 
@@ -176,7 +183,8 @@ def build_graph() -> any:
     return builder.compile()
 
 
-if __name__ == "__main__":
+def main():
+    load_environment_variables()
     graph = build_graph()
     github_details = fetch_github_environment_variables()
     input = {"github": github_details}
@@ -186,3 +194,7 @@ if __name__ == "__main__":
         logger.info({"event": "final_result", "result": result["output"]})
     else:
         logger.error({"event": "final_result", "result": result})
+
+
+if __name__ == "__main__":
+    main()
