@@ -1,7 +1,7 @@
 from langchain_core.runnables import RunnableSerializable
 from langgraph.graph import END, Graph
 
-from .static_analyzer import StaticAnalyzer
+from graph.static_analyzer import StaticAnalyzer
 
 
 class StaticAnalyzerWorkflow:
