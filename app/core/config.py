@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Literal, Optional, Union
 
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_openai import AzureChatOpenAI
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
