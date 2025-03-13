@@ -1,19 +1,19 @@
 import logging
-import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 import uvicorn
-from dotenv import find_dotenv, load_dotenv
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 
-from app.api.routes import stateless_runs
-from app.core.config import settings
-from app.core.logging_config import configure_logging
-from app.core.utils import *
+from api.routes import stateless_runs
+from core.config import settings
+from core.logging_config import configure_logging
+from core.utils import load_environment_variables
+
+
+logger = configure_logging()  # Apply global logging settings
 
 
 @asynccontextmanager
@@ -148,13 +148,11 @@ def main() -> None:
     Returns:
         None
     """
-    configure_logging()  # Apply global logging settings
+    # Load environment variables before starting the application
+    load_environment_variables()
 
     logger = logging.getLogger("app")  # Default logger for main script
     logger.info("Starting FastAPI application...")
-
-    # Load environment variables before starting the application
-    load_environment_variables()
 
     # Start the FastAPI application using Uvicorn
     uvicorn.run(
