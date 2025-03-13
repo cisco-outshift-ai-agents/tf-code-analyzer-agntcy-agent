@@ -6,9 +6,9 @@ from typing import Any
 
 from langchain_core.runnables import RunnableSerializable
 
-from app.core.utils import *
+from core.utils import check_path_type, extract_zipfile
 
-from .prompt_template import *
+from graph.prompt_template import create_static_analyzer_prompt_template, wrap_prompt
 
 
 class StaticAnalyzer:
