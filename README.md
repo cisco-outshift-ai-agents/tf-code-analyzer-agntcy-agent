@@ -1,11 +1,12 @@
-# tf-code-analyzer-agntcy-agent
-Terraform Code Analyzer AI Agent
+# Terraform Code Analyzer AI Agent
+[![Release](https://img.shields.io/github/v/release/cisco-ai-agents/tf-code-analyzer-agntcy-agent?display_name=tag)](CHANGELOG.md)
+[![Contributor-Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-fbab2c.svg)](CODE_OF_CONDUCT.md)
 
-## Overview
+## About the Project
 
 This repository contains a Terraform Code Analyzer AI Agent Protocol FastAPI application. It also includes examples of JSON-based logging, CORS configuration, and route tagging.
 
-## Requirements
+## Prerequisites
 
 - Python 3.12+
 - A virtual environment is recommended for isolating dependencies.
@@ -34,7 +35,7 @@ Before using this package, ensure that the following executables are installed o
 
 
 
-## Running the Application
+## Usage
 
 ### Required Environment Variables
 Before running the application, ensure you have the following environment variables set in your .env file or in your environment:
@@ -154,9 +155,31 @@ Upon successful execution, you should see:
 
 ![Langgraph Studio](./docs/imgs/studio.png "Studio")
 
+## Roadmap
+
+See the [open issues](https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent/issues) for a list
+of proposed features (and known issues).
+
 ## Contributing
 
-1. Fork the repository.
-2. Create a feature branch.
-3. Make your changes and ensure tests pass.
-4. Submit a pull request.
+Contributions are what make the open source community such an amazing place to
+learn, inspire, and create. Any contributions you make are **greatly
+appreciated**. For detailed contributing guidelines, please see
+[CONTRIBUTING.md](CONTRIBUTING.md)
+
+## License
+
+Distributed under the Apache-2.0 License. See [LICENSE](LICENSE) for more
+information.
+
+## Contact
+
+Aditi Gupta  - [@therealaditigupta](https://github.com/therealaditigupta) - aditigu2@cisco.com
+
+Project Link:
+[https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent](https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent)
+
+## Acknowledgements
+
+This template was adapted from
+[https://github.com/othneildrew/Best-README-Template](https://github.com/othneildrew/Best-README-Template).
