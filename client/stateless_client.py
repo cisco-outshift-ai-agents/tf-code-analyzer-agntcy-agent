@@ -10,7 +10,6 @@ import uuid
 from typing import Any, Dict, TypedDict
 
 import requests
-from dotenv import find_dotenv, load_dotenv
 from langgraph.graph import END, START, StateGraph
 from requests.exceptions import (ConnectionError, HTTPError, RequestException,
                                  Timeout)
@@ -28,7 +27,7 @@ logger = configure_logging()
 
 
 # configure remote server
-port = int(os.getenv("TF_CODE_ANALYZER_PORT", "8133"))
+port = int(os.getenv("TF_CODE_ANALYZER_PORT", "8123"))
 host = os.getenv("TF_CODE_ANALYZER_HOST", "127.0.0.1")
 REMOTE_SERVER_URL = f"http://{host}:{port}/api/v1/runs"
 logging.info(f"Remote server URL: {REMOTE_SERVER_URL}")
