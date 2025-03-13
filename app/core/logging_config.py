@@ -41,12 +41,12 @@ class JSONFormatter(logging.Formatter):
 
 def get_log_dir() -> Path:
     """
-    Returns the log directory path and ensures it exists.
+    Returns the log directory path relative to the main execution directory and ensures it exists.
 
     Returns:
-        Path: The path to the logs directory (app/logs/)
+        Path: The path to the logs directory (logs/)
     """
-    log_dir = Path(__file__).parent.parent / "logs"
+    log_dir = Path.cwd() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir
 
@@ -137,7 +137,7 @@ def get_logging_config(log_file: Path, log_level: str) -> Dict:
     }
 
 
-def configure_logging() -> None:
+def configure_logging() -> logging.Logger:
     """
     Configures structured JSON logging for the FastAPI application.
 
@@ -153,3 +153,4 @@ def configure_logging() -> None:
 
     logger = logging.getLogger("app")
     logger.info("Logging is initialized. This should appear in the log file.")
+    return logger

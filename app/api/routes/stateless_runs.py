@@ -6,10 +6,10 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 
-from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain, settings
-from app.core.github import GithubClient, GithubRequest
-from app.graph.graph import StaticAnalyzerWorkflow
-from app.models.models import Any, ErrorResponse, RunCreateStateless, Union
+from core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain, settings
+from core.github import GithubClient, GithubRequest
+from graph.graph import StaticAnalyzerWorkflow
+from models.models import Any, ErrorResponse, RunCreateStateless, Union
 
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)  # This will be "app.api.routes.<name>"
@@ -94,7 +94,7 @@ def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorRespons
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=INTERNAL_ERROR_MESSAGE,
-        ) from e
+        )
 
     payload = {
         "agent_id": agent_id,

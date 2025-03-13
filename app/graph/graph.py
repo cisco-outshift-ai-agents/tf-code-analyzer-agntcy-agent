@@ -1,7 +1,7 @@
 from langchain_core.runnables import RunnableSerializable
 from langgraph.graph import END, Graph
 
-from .static_analyzer import StaticAnalyzer
+from graph.static_analyzer import StaticAnalyzer
 
 
 class StaticAnalyzerWorkflow:
@@ -68,6 +68,6 @@ class StaticAnalyzerWorkflow:
         try:
             result = self.graph.invoke({"file_path": context_files})
         except Exception as e:
-            raise Exception("Terraform analysis failed")
+            raise Exception(f"Terraform analysis failed: {e}")
 
         return result
