@@ -98,9 +98,13 @@ class GithubClient:
                 zip_ref.extractall(extract_path)
 
             extracted_repo_path = os.path.join(destination_folder, folder_name)
-            logger.info(f"Repository extracted successfully to '%s'", extracted_repo_path)
+            logger.info(
+                f"Repository extracted successfully to '%s'", extracted_repo_path
+            )
             return extracted_repo_path
 
         except Exception as e:
-            logger.exception("Failed to download and extract GitHub repository %s", str(e))
+            logger.exception(
+                "Failed to download and extract GitHub repository %s", str(e)
+            )
             raise

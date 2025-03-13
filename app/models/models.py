@@ -7,8 +7,15 @@ from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
-from pydantic import (AnyUrl, AwareDatetime, BaseModel, ConfigDict, Field,
-                      RootModel, conint)
+from pydantic import (
+    AnyUrl,
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    conint,
+)
 
 
 class Agent(BaseModel):

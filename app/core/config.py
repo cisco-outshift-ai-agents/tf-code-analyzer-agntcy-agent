@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings
 # Error messages
 INTERNAL_ERROR_MESSAGE = "An unexpected error occurred. Please try again later."
 
+
 def parse_cors(v: Any) -> Union[List[str], str]:
     if isinstance(v, str) and not v.startswith("["):
         return [i.strip() for i in v.split(",")]

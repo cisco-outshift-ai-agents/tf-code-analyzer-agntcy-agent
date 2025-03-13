@@ -6,7 +6,7 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 
-from app.core.config import get_llm_chain, settings, INTERNAL_ERROR_MESSAGE
+from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain, settings
 from app.core.github import GithubClient, GithubRequest
 from app.graph.graph import StaticAnalyzerWorkflow
 from app.models.models import Any, ErrorResponse, RunCreateStateless, Union
@@ -14,6 +14,7 @@ from app.models.models import Any, ErrorResponse, RunCreateStateless, Union
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)  # This will be "app.api.routes.<name>"
 workflow = StaticAnalyzerWorkflow(chain=get_llm_chain())
+
 
 @router.post(
     "/runs",
@@ -78,12 +79,15 @@ def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorRespons
         except Exception as e:
             logger.error("Internal error occurred: %s", e, exc_info=True)
             raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=INTERNAL_ERROR_MESSAGE,
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                detail=INTERNAL_ERROR_MESSAGE,
             ) from e
 
         result = workflow.analyze(file_path)
     except HTTPException as http_exc:
-        logger.error("HTTP error during run processing: %s", http_exc.detail, exc_info=True)
+        logger.error(
+            "HTTP error during run processing: %s", http_exc.detail, exc_info=True
+        )
         raise http_exc
     except Exception as exc:
         logger.error("Internal error during run processing: %s", exc, exc_info=True)

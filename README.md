@@ -25,18 +25,27 @@ This repository contains a Terraform Code Analyzer AI Agent Protocol FastAPI app
    pip install -r requirements.txt
    ```
 
+3. Install Required Executables
+
+Before using this package, ensure that the following executables are installed on your local system:
+
+- **Terraform**: [Installation Guide](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+- **TFLint**: [Installation Guide](https://github.com/terraform-linters/tflint)
+
+
+
 ## Running the Application
 
 ### Required Environment Variables
 Before running the application, ensure you have the following environment variables set in your .env file or in your environment:
 
-LLM_PROVIDER: The language model provider (e.g., azure or openai).
-OPENAI_TEMPERATURE: The temperature setting for the language model (e.g., 0.7).
-AZURE_OPENAI_ENDPOINT: The endpoint URL for Azure OpenAI (required if using azure as LLM_PROVIDER).
-AZURE_OPENAI_API_KEY: Your Azure OpenAI API key (required if using azure as LLM_PROVIDER).
-AZURE_OPENAI_API_VERSION: The API version for Azure OpenAI (required if using azure as LLM_PROVIDER).
-OPENAI_API_KEY: Your OpenAI API key (required if using openai as LLM_PROVIDER).
-OPENAI_API_VERSION: The model version for OpenAI (default is usually set to gpt-4o or similar).
+- LLM_PROVIDER: The language model provider (e.g., azure or openai).
+- OPENAI_TEMPERATURE: The temperature setting for the language model (e.g., 0.7).
+- AZURE_OPENAI_ENDPOINT: The endpoint URL for Azure OpenAI (required if using azure as LLM_PROVIDER).
+- AZURE_OPENAI_API_KEY: Your Azure OpenAI API key (required if using azure as LLM_PROVIDER).
+- AZURE_OPENAI_API_VERSION: The API version for Azure OpenAI (required if using azure as LLM_PROVIDER).
+- OPENAI_API_KEY: Your OpenAI API key (required if using openai as LLM_PROVIDER).
+- OPENAI_API_VERSION: The model version for OpenAI (default is usually set to gpt-4o or similar).
 Make sure your .env file includes these keys with the appropriate values. For example:
 
 ```dotenv
@@ -52,9 +61,9 @@ OPENAI_API_KEY=your-openai-api-key
 
 If you are running the client, make sure to add relevant Github environment variables.
 
-GITHUB_REPO_URL: The Github repository URL on which to run the code analyzer.
-GITHUB_TOKEN: Your Github Authentication Token.
-GITHUB_BRANCH: The branch that contains the code you want analyzed.
+- GITHUB_REPO_URL: The Github repository URL on which to run the code analyzer.
+- GITHUB_TOKEN: Your Github Authentication Token.
+- GITHUB_BRANCH: The branch that contains the code you want analyzed.
 
 ```dotenv
 GITHUB_REPO_URL=https://your-github-url
@@ -131,6 +140,17 @@ Run the server
 ```bash
 langgraph dev
 ```
+
+Populate the Github input field with: 
+```json
+{
+   "repo_url": "https://<your_repo_url>",
+   "github_token": "<your_github_token>",
+   "branch": "<your_github_branch>"
+}
+```
+
+Upon successful execution, you should see:
 
 ![Langgraph Studio](./docs/imgs/studio.png "Studio")
 

@@ -10,8 +10,7 @@ from typing import Any, Dict, TypedDict
 
 import requests
 from langgraph.graph import END, START, StateGraph
-from requests.exceptions import (ConnectionError, HTTPError, RequestException,
-                                 Timeout)
+from requests.exceptions import ConnectionError, HTTPError, RequestException, Timeout
 
 from app.core.logging_config import configure_logging
 from app.core.utils import *
