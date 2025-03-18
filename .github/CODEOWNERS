@@ -12,5 +12,4 @@
 # the repository. Unless a later match takes precedence,
 # the following users/teams will be requested for
 # review when someone opens a pull request.
-* @jsd784/(https://github.com/jsd784)
-* @therealaditigupta/(https://github.com/therealaditigupta)
+* @therealaditigupta @jsd784
