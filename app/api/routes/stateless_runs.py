@@ -3,47 +3,36 @@ from __future__ import annotations
 import logging
 from http import HTTPStatus
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
-from core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain, settings
-from core.github import GithubClient, GithubRequest
+from core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
+from core.github import GithubClient
 from graph.graph import StaticAnalyzerWorkflow
-from models.models import Any, ErrorResponse, RunCreateStateless, Union
+from models.models import Any, ErrorResponse, GithubRequest, RunCreateStateless, RunCreateStatelessOutput, Union
 
 router = APIRouter(tags=["Stateless Runs"])
-logger = logging.getLogger(__name__)  # This will be "app.api.routes.<name>"
-workflow = StaticAnalyzerWorkflow(chain=get_llm_chain())
-
+logger = logging.getLogger(__name__)
 
 @router.post(
     "/runs",
-    response_model=Any,
+    response_model=RunCreateStatelessOutput,
     responses={
-        "404": {"model": ErrorResponse},
         "409": {"model": ErrorResponse},
         "422": {"model": ErrorResponse},
+        "500": {"model": ErrorResponse},
     },
     tags=["Stateless Runs"],
 )
-def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorResponse]:
+def run_stateless_runs_post(body: RunCreateStateless, request: Request) -> Union[Any, ErrorResponse]:
     """
     Create Background Run
     """
+
+    settings = request.app.state.settings
+
     try:
-        # Extract assistant_id from the payload
-        agent_id = body.agent_id
-        logging.debug(f"Agent id: %s", agent_id)
-
-        # Validate that the assistant_id is not empty.
-        if not body.agent_id:
-            msg = "agent_id is required and cannot be empty."
-            logging.error(msg)
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=msg,
-            )
-
         # -----------------------------------------------
         # Extract the Github details from the input.
         # We expect the content to be located at: payload["input"]["github"]
@@ -53,20 +42,11 @@ def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorRespons
         input_field = body.input
         if not isinstance(input_field, dict):
             raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST, detail="Invalid input format"
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid input format"
             )
 
         # Retrieve the 'github' field from the input dictionary.
-        github_data = input_field.get("github")
-
-        # Ensure that the 'file_path' field is a string.
-        if not isinstance(github_data, dict):
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST, detail="Invalid GitHub data format"
-            )
-
-        # Extract the Github details from the input.
-        github_request = GithubRequest(**github_data)
+        github_request = input_field.get("github")
 
         # Initialize the Github client and download the repository.
         github_client = GithubClient(github_request.github_token)
@@ -82,8 +62,11 @@ def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorRespons
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                 detail=INTERNAL_ERROR_MESSAGE,
             ) from e
-
+        
+        # Run the static analyzer workflow on the downloaded repository.
+        workflow = StaticAnalyzerWorkflow(chain=get_llm_chain(settings))
         result = workflow.analyze(file_path)
+        logger.info(result)
     except HTTPException as http_exc:
         logger.error(
             "HTTP error during run processing: %s", http_exc.detail, exc_info=True
@@ -97,7 +80,7 @@ def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorRespons
         )
 
     payload = {
-        "agent_id": agent_id,
+        "agent_id": body.agent_id,
         "output": result,
         "model": settings.OPENAI_API_VERSION,
         "metadata": {},
@@ -113,6 +96,7 @@ def run_stateless_runs_post(body: RunCreateStateless) -> Union[Any, ErrorRespons
         "409": {"model": ErrorResponse},
         "422": {"model": ErrorResponse},
     },
+    include_in_schema=False,
     tags=["Stateless Runs"],
 )
 def stream_run_stateless_runs_stream_post(
@@ -132,6 +116,7 @@ def stream_run_stateless_runs_stream_post(
         "409": {"model": ErrorResponse},
         "422": {"model": ErrorResponse},
     },
+    include_in_schema=False,
     tags=["Stateless Runs"],
 )
 def wait_run_stateless_runs_wait_post(

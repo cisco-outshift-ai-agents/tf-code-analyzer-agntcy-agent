@@ -15,8 +15,8 @@ from pydantic import (
     Field,
     RootModel,
     conint,
+    SecretStr,
 )
-
 
 class Agent(BaseModel):
     agent_id: str = Field(..., description="The ID of the agent.", title="Agent Id")
@@ -181,7 +181,28 @@ class OnCompletion(Enum):
     keep = "keep"
 
 
+class GithubRequest(BaseModel):
+    repo_url: str = Field(..., description="GitHub repository URL")  # Required
+    branch: str = Field(..., min_length=1, description="Branch name to download")  # Required
+    github_token: Optional[SecretStr] = Field(None, description="GitHub Personal Access Token (optional)")  # Optional
+
 class RunCreateStateless(BaseModel):
+    agent_id: Optional[str] = Field(
+        "123456",
+        description="The agent ID to run. If not provided will use the default agent for this service.",
+        title="Agent Id",
+    )
+    input: Dict[str, GithubRequest] = Field(
+        None, description="The input to the graph, expecting a dictionary with a 'github' key.", title="Input"
+    )
+    messages: Optional[List[Message]] = Field(
+        None,
+        description="The current Messages of the thread. If messages are contained in Thread.values, implementations should remove them from values when returning messages. When this key isn't present it means the thread/agent doesn't support messages.",
+        title="Messages",
+    )
+
+
+class RunCreateStatelessFull(BaseModel):
     agent_id: Optional[str] = Field(
         None,
         description="The agent ID to run. If not provided will use the default agent for this service.",
@@ -223,6 +244,27 @@ class RunCreateStateless(BaseModel):
         title="After Seconds",
     )
 
+class RunCreateStatelessOutput(BaseModel):
+        agent_id: Optional[str] = Field(
+            ...,
+            description="The agent ID that was run. If not provided will use the default agent for this service.",
+            title="Agent Id",
+        )
+        output: Optional[str] = Field(
+            ...,
+            description="The graph's output",
+            title="Output",
+        ),
+        model: Optional[str] = Field(
+            ...,
+            description="The LLM model used by this graph",
+            title="Model",
+        ),
+        metadata: Optional[str] = Field(
+            ...,
+            description="Metadata associated with the run.",
+            title="Metadata"
+        )
 
 class Status1(Enum):
     idle = "idle"

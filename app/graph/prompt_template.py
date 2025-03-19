@@ -17,6 +17,7 @@ def create_static_analyzer_prompt_template() -> ChatPromptTemplate:
                 Each item in the list should have the following format: {{file name}}: {{full issue description}}
                 Remove the warnings, only keep the errors in the final list.
 
+                If there are no errors, return nothing at all—no text, no empty string, no whitespace, nothing.
                 Only return the list of issues in your response, nothing else.
                 """
     )
