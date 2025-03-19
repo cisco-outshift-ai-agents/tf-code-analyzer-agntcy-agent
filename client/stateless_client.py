@@ -1,23 +1,24 @@
-# Description: This file contains a sample graph client that makes a stateless request to the Remote Graph Server.
-# Usage: python client/stateless_client.py
+"""
+stateless_client.py
+
+This modules contains a sample graph client that makes a stateless 
+request to the Remote Graph Server.
+
+Usage: python client/stateless_client.py
+"""
 
 import json
-import logging
 import os
-import sys
 import traceback
 import uuid
 from typing import Any, Dict, TypedDict
 
 import requests
 from langgraph.graph import END, START, StateGraph
-from requests.exceptions import (ConnectionError, HTTPError, RequestException,
-                                 Timeout)
+from requests.exceptions import HTTPError, RequestException, Timeout
 
 # Get the absolute path of the parent directory
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-# Add the parent directory to sys.path
 sys.path.insert(0, parent_dir)
 
 from app.core.logging_config import configure_logging
@@ -26,11 +27,18 @@ from app.core.utils import load_environment_variables
 logger = configure_logging()
 
 
-# configure remote server
-port = int(os.getenv("TF_CODE_ANALYZER_PORT", "8123"))
-host = os.getenv("TF_CODE_ANALYZER_HOST", "127.0.0.1")
-REMOTE_SERVER_URL = f"http://{host}:{port}/api/v1/runs"
-logging.info(f"Remote server URL: {REMOTE_SERVER_URL}")
+def configure_remote_server() -> str:
+    """
+    Configures the remote server URL using environment variables.
+
+    Returns:
+        str: The remote server URL.
+    """
+    port = int(os.getenv("TF_CODE_ANALYZER_PORT", "8133"))
+    host = os.getenv("TF_CODE_ANALYZER_HOST", "127.0.0.1")
+    remote_url = f"http://{host}:{port}/api/v1/runs"
+    logger.info(f"Remote server URL: {remote_url}")
+    return remote_url
 
 
 def fetch_github_environment_variables() -> Dict[str, str | None]:
@@ -58,7 +66,9 @@ class GraphState(TypedDict):
     static_analyzer_output: str
 
 
-def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
+def node_remote_request_stateless(
+    state: Dict[str, Any], remote_server_url: str
+) -> Dict[str, Any]:
     """
     Handles a stateless request to the Remote Graph Server.
 
@@ -89,7 +99,7 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
     # Use a session for efficiency
     with requests.Session() as session:
         try:
-            response = session.post(REMOTE_SERVER_URL, headers=headers, json=payload)
+            response = session.post(remote_server_url, headers=headers, json=payload)
             response.raise_for_status()  # Raises HTTPError for 4xx and 5xx
 
             try:
@@ -175,20 +185,30 @@ def build_graph() -> Any:
     Returns:
         StateGraph: A compiled LangGraph state graph.
     """
+    remote_server_url = configure_remote_server()
+
     builder = StateGraph(GraphState)
-    builder.add_node("node_remote_request_stateless", node_remote_request_stateless)
+    builder.add_node(
+        "node_remote_request_stateless",
+        lambda state: node_remote_request_stateless(state, remote_server_url),
+    )
     builder.add_edge(START, "node_remote_request_stateless")
     builder.add_edge("node_remote_request_stateless", END)
     return builder.compile()
 
 
 def main():
+    """Main function to set up and invoke the graph."""
     load_environment_variables()
+
     graph = build_graph()
+
     github_details = fetch_github_environment_variables()
     input = {"github": github_details}
     logger.info({"event": "invoking_graph", "input": input})
+
     result = graph.invoke(input)
+
     if "output" in result:
         logger.info({"event": "final_result", "result": result["output"]})
     else:

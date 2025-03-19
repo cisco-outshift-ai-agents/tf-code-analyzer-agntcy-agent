@@ -8,27 +8,25 @@ from urllib.parse import urlparse
 import requests
 from fastapi import HTTPException
 from github import Github, GithubException
-from pydantic import BaseModel
+from pydantic import SecretStr
 
 logger = logging.getLogger(__name__)
 
 
-class GithubRequest(BaseModel):
-    repo_url: str  # GitHub repository URL
-    github_token: str  # GitHub PAT
-    branch: str  # Branch name to download
-
-
 class GithubClient:
-    def __init__(self, github_token: str):
+    def __init__(self, github_token: SecretStr):
         self.token = github_token
         self.client = self._authenticate(github_token)
 
-    def _authenticate(self, github_token: str) -> Github:
+    def _authenticate(self, github_token) -> Github:
         try:
-            g = Github(github_token)
-            user = g.get_user()
-            logger.info(f"Authenticated user: %s", user.login)
+            if github_token is None:
+                g = Github()
+                logger.info("No GitHub token provided. Using anonymous access.")
+            else:
+                g = Github(github_token.get_secret_value())
+                user = g.get_user()
+                logger.info("Authenticated user: %s", user.login)
             return g
         except GithubException as e:
             logger.error(f"GitHub authentication failed: {e}")
@@ -68,12 +66,13 @@ class GithubClient:
             # Build the GitHub API URL to download the zipball for the
             # specified branch.
             api_url = f"https://api.github.com/repos/{owner}/{repo}/zipball/{branch}"
-            logger.info(f"Downloading zipball from: %s", api_url)
+            logger.info("Downloading zipball from: %s", api_url)
 
             headers = {
-                "Authorization": f"token {self.token}",
                 "Accept": "application/vnd.github.v3+json",
             }
+            if self.token is not None:
+                headers["Authorization"] = f"token {self.token.get_secret_value()}"
 
             # Make the GET request with stream enabled.
             response = requests.get(api_url, headers=headers, stream=True, timeout=30)
@@ -99,7 +98,7 @@ class GithubClient:
 
             extracted_repo_path = os.path.join(destination_folder, folder_name)
             logger.info(
-                f"Repository extracted successfully to '%s'", extracted_repo_path
+                "Repository extracted successfully to '%s'", extracted_repo_path
             )
             return extracted_repo_path
 

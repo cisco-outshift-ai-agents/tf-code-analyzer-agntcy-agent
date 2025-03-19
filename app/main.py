@@ -8,9 +8,9 @@ from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 
 from api.routes import stateless_runs
-from core.config import settings
+from core.config import APISettings, load_and_validate_app_settings
 from core.logging_config import configure_logging
-from core.utils import load_environment_variables
+from core.utils import load_environment_variables, check_required_binaries
 
 
 logger = configure_logging()  # Apply global logging settings
@@ -97,7 +97,7 @@ def add_handlers(app: FastAPI) -> None:
         return {"message": "Gateway of the App"}
 
 
-def create_app() -> FastAPI:
+def create_app(settings: APISettings) -> FastAPI:
     """
     Creates and configures the FastAPI application instance.
 
@@ -115,10 +115,9 @@ def create_app() -> FastAPI:
         openapi_url=f"{settings.API_V1_STR}/openapi.json",
         generate_unique_id_function=custom_generate_unique_id,
         version="0.1.0",
-        description=settings.PROJECT_NAME,
+        description=settings.DESCRIPTION,
         lifespan=lifespan,  # Use the new lifespan approach for startup/shutdown
     )
-
     add_handlers(app)
     app.include_router(stateless_runs.router, prefix=settings.API_V1_STR)
 
@@ -131,6 +130,13 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         expose_headers=["*"],
     )
+
+    # Load and validate application settings
+    try:
+        app.state.settings = load_and_validate_app_settings()
+    except ValueError as e:
+        logger.error(f"Startup failed: {e}")
+        raise SystemExit(1)
 
     return app
 
@@ -150,13 +156,17 @@ def main() -> None:
     """
     # Load environment variables before starting the application
     load_environment_variables()
+    settings = APISettings()
+
+    # Validate that required binaries are installed
+    check_required_binaries()
 
     logger = logging.getLogger("app")  # Default logger for main script
     logger.info("Starting FastAPI application...")
 
     # Start the FastAPI application using Uvicorn
     uvicorn.run(
-        create_app(),
+        create_app(settings),
         host=settings.TF_CODE_ANALYZER_HOST,
         port=settings.TF_CODE_ANALYZER_PORT,
         log_level="info",

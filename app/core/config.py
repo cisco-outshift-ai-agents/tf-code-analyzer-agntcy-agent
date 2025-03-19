@@ -1,9 +1,8 @@
 import logging
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Optional, Union
 
 from langchain_openai import ChatOpenAI
 from langchain_openai import AzureChatOpenAI
-from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 # Error messages
@@ -18,14 +17,15 @@ def parse_cors(v: Any) -> Union[List[str], str]:
     raise ValueError(v)
 
 
-class Settings(BaseSettings):
-    # Application settings
+class APISettings(BaseSettings):
     API_V1_STR: str = "/api/v1"
-    ENVIRONMENT: Literal["local", "staging", "production"] = "local"
     PROJECT_NAME: str = "Terraform Code Analyzer Agent"
     DESCRIPTION: str = "Application to run linters on Terraform code"
     TF_CODE_ANALYZER_HOST: str = "127.0.0.1"
     TF_CODE_ANALYZER_PORT: int = 8123
+
+
+class AppSettings(BaseSettings):
     DESTINATION_FOLDER: str = "/tmp"
 
     # Langchain settings (optional)
@@ -36,12 +36,11 @@ class Settings(BaseSettings):
     LANGSMITH_API_KEY: Optional[str] = None
 
     # Mandatory LLM settings
-    LLM_PROVIDER: str = "azure"  # or "openai"
-    OPENAI_TEMPERATURE: float = 0.7
+    OPENAI_TEMPERATURE: Optional[float] = 0.7
 
     # Azure settings
     AZURE_OPENAI_ENDPOINT: Optional[str] = None
-    AZURE_OPENAI_DEPLOYMENT_NAME: Optional[str] = "gpt-4o"
+    AZURE_OPENAI_DEPLOYMENT_NAME: Optional[str] = None
     AZURE_OPENAI_API_KEY: Optional[str] = None
     AZURE_OPENAI_API_VERSION: Optional[str] = None
 
@@ -49,48 +48,65 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_API_VERSION: Optional[str] = "gpt-4o"
 
-    # Validate LLM settings
-    @model_validator(mode="after")
-    def check_required_settings(self) -> "Settings":
-        logger = logging.getLogger(__name__)
-        logger.info("Running model validator for Settings...")
-        provider = self.LLM_PROVIDER.lower()
-        if provider == "azure":
-            missing = []
-            if not self.AZURE_OPENAI_ENDPOINT:
-                missing.append("AZURE_OPENAI_ENDPOINT")
-            if not self.AZURE_OPENAI_API_KEY:
-                missing.append("AZURE_OPENAI_API_KEY")
-            if not self.AZURE_OPENAI_API_VERSION:
-                missing.append("AZURE_OPENAI_API_VERSION")
-            if missing:
-                raise ValueError(
-                    f"Missing required Azure OpenAI environment variables: {', '.join(missing)}"
-                )
-        elif provider == "openai":
-            if not self.OPENAI_API_KEY:
-                raise ValueError(
-                    "Missing required OpenAI environment variable: OPENAI_API_KEY"
-                )
-        else:
-            raise ValueError(f"Unsupported LLM provider: {provider}")
-        return self
-
     class Config:
-        env_file = ".env"
         extra = "ignore"  # This will ignore any extra environment variables.
 
 
-settings = Settings()
+def load_and_validate_app_settings() -> AppSettings:
+    """
+    Loads and validates application settings at startup.
+    """
+    settings = AppSettings()
+    logger = logging.getLogger(__name__)
+
+    missing_azure = [
+        key
+        for key, value in {
+            "AZURE_OPENAI_ENDPOINT": settings.AZURE_OPENAI_ENDPOINT,
+            "AZURE_OPENAI_API_KEY": settings.AZURE_OPENAI_API_KEY,
+            "AZURE_OPENAI_DEPLOYMENT_NAME": settings.AZURE_OPENAI_DEPLOYMENT_NAME,
+            "AZURE_OPENAI_API_VERSION": settings.AZURE_OPENAI_API_VERSION,
+        }.items()
+        if not value
+    ]
+
+    missing_openai = ["OPENAI_API_KEY"] if not settings.OPENAI_API_KEY else []
+    if missing_azure and missing_openai:
+        raise ValueError(
+            "Missing required LLM settings. Either provide:"
+            f" OpenAI fields: {', '.join(missing_openai)}"
+            f" OR Azure OpenAI fields: {', '.join(missing_azure)}"
+        )
+    elif not (missing_azure or missing_openai):
+        raise ValueError(
+            "Both OpenAI and Azure OpenAI settings are provided. Please provide only one."
+        )
+
+    logger.info("Settings validated successfully.")
+    return settings
 
 
-def get_llm_chain():
+def get_llm_chain(settings: AppSettings) -> Union[ChatOpenAI, AzureChatOpenAI]:
     """
-    Get the LLM provider based on the configuration.
+    Get the LLM provider based on the available configuration.
+    Automatically determines if Azure OpenAI or OpenAI should be used.
     """
-    provider = settings.LLM_PROVIDER.lower()
     temperature = settings.OPENAI_TEMPERATURE
-    if provider == "azure":
+
+    # Check if Azure settings are provided
+    has_azure_settings = all(
+        [
+            settings.AZURE_OPENAI_ENDPOINT,
+            settings.AZURE_OPENAI_DEPLOYMENT_NAME,
+            settings.AZURE_OPENAI_API_KEY,
+            settings.AZURE_OPENAI_API_VERSION,
+        ]
+    )
+
+    # Check if OpenAI settings are provided
+    has_openai_settings = settings.OPENAI_API_KEY is not None
+
+    if has_azure_settings:
         return AzureChatOpenAI(
             azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
             azure_deployment=settings.AZURE_OPENAI_DEPLOYMENT_NAME,
@@ -98,10 +114,12 @@ def get_llm_chain():
             api_version=settings.AZURE_OPENAI_API_VERSION,
             temperature=temperature,
         )
-    if provider == "openai":
+
+    if has_openai_settings:
         return ChatOpenAI(
             model_name=settings.OPENAI_API_VERSION,
             api_key=settings.OPENAI_API_KEY,
             temperature=temperature,
         )
-    raise ValueError(f"Unsupported LLM provider: {provider}")
+
+    return ValueError("No valid LLM settings found.")
