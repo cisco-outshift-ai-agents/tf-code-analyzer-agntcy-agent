@@ -18,6 +18,7 @@ from pydantic import (
     SecretStr,
 )
 
+
 class Agent(BaseModel):
     agent_id: str = Field(..., description="The ID of the agent.", title="Agent Id")
     name: str = Field(..., description="The name of the agent", title="Agent Name")
@@ -54,18 +55,18 @@ class AgentSchemas(BaseModel):
 
 
 class Status(Enum):
-    pending = "pending"
-    error = "error"
-    success = "success"
-    timeout = "timeout"
-    interrupted = "interrupted"
+    PENDING = "pending"
+    ERROR = "error"
+    SUCCESS = "success"
+    TIMEOUT = "timeout"
+    INTERRUPTED = "interrupted"
 
 
 class MultitaskStrategy(Enum):
-    reject = "reject"
-    rollback = "rollback"
-    interrupt = "interrupt"
-    enqueue = "enqueue"
+    REJECT = "reject"
+    ROLLBACK = "rollback"
+    INTERRUPT = "interrupt"
+    ENQUEUE = "enqueue"
 
 
 class Run(BaseModel):
@@ -183,8 +184,13 @@ class OnCompletion(Enum):
 
 class GithubRequest(BaseModel):
     repo_url: str = Field(..., description="GitHub repository URL")  # Required
-    branch: str = Field(..., min_length=1, description="Branch name to download")  # Required
-    github_token: Optional[SecretStr] = Field(None, description="GitHub Personal Access Token (optional)")  # Optional
+    branch: str = Field(
+        ..., min_length=1, description="Branch name to download"
+    )  # Required
+    github_token: Optional[SecretStr] = Field(
+        None, description="GitHub Personal Access Token (optional)"
+    )  # Optional
+
 
 class RunCreateStateless(BaseModel):
     agent_id: Optional[str] = Field(
@@ -193,7 +199,9 @@ class RunCreateStateless(BaseModel):
         title="Agent Id",
     )
     input: Dict[str, GithubRequest] = Field(
-        None, description="The input to the graph, expecting a dictionary with a 'github' key.", title="Input"
+        None,
+        description="The input to the graph, expecting a dictionary with a 'github' key.",
+        title="Input",
     )
     messages: Optional[List[Message]] = Field(
         None,
@@ -244,27 +252,31 @@ class RunCreateStatelessFull(BaseModel):
         title="After Seconds",
     )
 
+
 class RunCreateStatelessOutput(BaseModel):
-        agent_id: Optional[str] = Field(
-            ...,
-            description="The agent ID that was run. If not provided will use the default agent for this service.",
-            title="Agent Id",
-        )
-        output: Optional[str] = Field(
+    agent_id: Optional[str] = Field(
+        ...,
+        description="The agent ID that was run. If not provided will use the default agent for this service.",
+        title="Agent Id",
+    )
+    output: Optional[str] = (
+        Field(
             ...,
             description="The graph's output",
             title="Output",
         ),
-        model: Optional[str] = Field(
+    )
+    model: Optional[str] = (
+        Field(
             ...,
             description="The LLM model used by this graph",
             title="Model",
         ),
-        metadata: Optional[str] = Field(
-            ...,
-            description="Metadata associated with the run.",
-            title="Metadata"
-        )
+    )
+    metadata: Optional[str] = Field(
+        ..., description="Metadata associated with the run.", title="Metadata"
+    )
+
 
 class Status1(Enum):
     idle = "idle"

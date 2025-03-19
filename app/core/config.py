@@ -16,12 +16,14 @@ def parse_cors(v: Any) -> Union[List[str], str]:
         return v
     raise ValueError(v)
 
+
 class APISettings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Terraform Code Analyzer Agent"
     DESCRIPTION: str = "Application to run linters on Terraform code"
     TF_CODE_ANALYZER_HOST: str = "127.0.0.1"
     TF_CODE_ANALYZER_PORT: int = 8123
+
 
 class AppSettings(BaseSettings):
     DESTINATION_FOLDER: str = "/tmp"
@@ -49,6 +51,7 @@ class AppSettings(BaseSettings):
     class Config:
         extra = "ignore"  # This will ignore any extra environment variables.
 
+
 def load_and_validate_app_settings() -> AppSettings:
     """
     Loads and validates application settings at startup.
@@ -57,22 +60,24 @@ def load_and_validate_app_settings() -> AppSettings:
     logger = logging.getLogger(__name__)
 
     missing_azure = [
-        key for key, value in {
+        key
+        for key, value in {
             "AZURE_OPENAI_ENDPOINT": settings.AZURE_OPENAI_ENDPOINT,
             "AZURE_OPENAI_API_KEY": settings.AZURE_OPENAI_API_KEY,
             "AZURE_OPENAI_DEPLOYMENT_NAME": settings.AZURE_OPENAI_DEPLOYMENT_NAME,
             "AZURE_OPENAI_API_VERSION": settings.AZURE_OPENAI_API_VERSION,
-        }.items() if not value
+        }.items()
+        if not value
     ]
 
     missing_openai = ["OPENAI_API_KEY"] if not settings.OPENAI_API_KEY else []
     if missing_azure and missing_openai:
         raise ValueError(
-            f"Missing required LLM settings. Either provide:"
+            "Missing required LLM settings. Either provide:"
             f" OpenAI fields: {', '.join(missing_openai)}"
             f" OR Azure OpenAI fields: {', '.join(missing_azure)}"
-        )   
-    elif not(missing_azure or missing_openai):
+        )
+    elif not (missing_azure or missing_openai):
         raise ValueError(
             "Both OpenAI and Azure OpenAI settings are provided. Please provide only one."
         )
@@ -81,7 +86,7 @@ def load_and_validate_app_settings() -> AppSettings:
     return settings
 
 
-def get_llm_chain(settings : AppSettings) -> Union[ChatOpenAI, AzureChatOpenAI]:
+def get_llm_chain(settings: AppSettings) -> Union[ChatOpenAI, AzureChatOpenAI]:
     """
     Get the LLM provider based on the available configuration.
     Automatically determines if Azure OpenAI or OpenAI should be used.
@@ -89,12 +94,14 @@ def get_llm_chain(settings : AppSettings) -> Union[ChatOpenAI, AzureChatOpenAI]:
     temperature = settings.OPENAI_TEMPERATURE
 
     # Check if Azure settings are provided
-    has_azure_settings = all([
-        settings.AZURE_OPENAI_ENDPOINT,
-        settings.AZURE_OPENAI_DEPLOYMENT_NAME,
-        settings.AZURE_OPENAI_API_KEY,
-        settings.AZURE_OPENAI_API_VERSION
-    ])
+    has_azure_settings = all(
+        [
+            settings.AZURE_OPENAI_ENDPOINT,
+            settings.AZURE_OPENAI_DEPLOYMENT_NAME,
+            settings.AZURE_OPENAI_API_KEY,
+            settings.AZURE_OPENAI_API_VERSION,
+        ]
+    )
 
     # Check if OpenAI settings are provided
     has_openai_settings = settings.OPENAI_API_KEY is not None
@@ -114,5 +121,5 @@ def get_llm_chain(settings : AppSettings) -> Union[ChatOpenAI, AzureChatOpenAI]:
             api_key=settings.OPENAI_API_KEY,
             temperature=temperature,
         )
-    
+
     return ValueError("No valid LLM settings found.")

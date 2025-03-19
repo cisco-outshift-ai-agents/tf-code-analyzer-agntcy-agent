@@ -1,0 +1,22 @@
+[MASTER]
+init-hook='import sys; sys.path.append(".")'
+# Allow loading of external plugins (if needed)
+load-plugins=pylint.extensions.docparams
+
+# List of directories to ignore (e.g., virtual environments, migrations, etc.)
+ignore=.venv, .vscode, .github
+
+# Maximum number of jobs for parallel execution
+jobs=4
+
+[MESSAGES CONTROL]
+# Disable overly strict checks that are not always necessary
+disable=
+    C0114,  # Missing module docstring
+    C0115,  # Missing class docstring
+    C0116,  # Missing function/method docstring
+    W1203,  # Use lazy % formatting in logging functions
+    W0718,  # Catching too general exception
+    W0611,  # Unused import
+    R0913,  # Too many arguments in function/method
+    R0914,  # Too many local variables

@@ -72,14 +72,18 @@ def load_environment_variables(env_file: str | None = None) -> None:
     else:
         logging.warning("No .env file found. Ensure environment variables are set.")
 
+
 def check_command_exists(command):
     """Check if a command exists on the system"""
     return shutil.which(command) is not None
 
+
 def check_required_binaries():
     """Check if required binaries are installed"""
     required_binaries = ["terraform", "tflint"]
-    missing_binaries = [binary for binary in required_binaries if not check_command_exists(binary)]
+    missing_binaries = [
+        binary for binary in required_binaries if not check_command_exists(binary)
+    ]
 
     if missing_binaries:
         raise ValueError(f"Missing required binaries: {', '.join(missing_binaries)}")

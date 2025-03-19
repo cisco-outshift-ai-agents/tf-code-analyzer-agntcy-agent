@@ -135,9 +135,9 @@ def create_app(settings: APISettings) -> FastAPI:
     try:
         app.state.settings = load_and_validate_app_settings()
     except ValueError as e:
-       logger.error(f"Startup failed: {e}")
-       raise SystemExit(1)
-    
+        logger.error(f"Startup failed: {e}")
+        raise SystemExit(1)
+
     return app
 
 
@@ -160,7 +160,7 @@ def main() -> None:
 
     # Validate that required binaries are installed
     check_required_binaries()
-    
+
     logger = logging.getLogger("app")  # Default logger for main script
     logger.info("Starting FastAPI application...")
 

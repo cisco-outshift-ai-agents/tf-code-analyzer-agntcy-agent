@@ -5,15 +5,21 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
 
 from core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
 from core.github import GithubClient
 from graph.graph import StaticAnalyzerWorkflow
-from models.models import Any, ErrorResponse, GithubRequest, RunCreateStateless, RunCreateStatelessOutput, Union
+from models.models import (
+    Any,
+    ErrorResponse,
+    RunCreateStateless,
+    RunCreateStatelessOutput,
+    Union,
+)
 
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)
+
 
 @router.post(
     "/runs",
@@ -25,7 +31,9 @@ logger = logging.getLogger(__name__)
     },
     tags=["Stateless Runs"],
 )
-def run_stateless_runs_post(body: RunCreateStateless, request: Request) -> Union[Any, ErrorResponse]:
+def run_stateless_runs_post(
+    body: RunCreateStateless, request: Request
+) -> Union[Any, ErrorResponse]:
     """
     Create Background Run
     """
@@ -42,7 +50,8 @@ def run_stateless_runs_post(body: RunCreateStateless, request: Request) -> Union
         input_field = body.input
         if not isinstance(input_field, dict):
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid input format"
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid input format",
             )
 
         # Retrieve the 'github' field from the input dictionary.
@@ -62,7 +71,7 @@ def run_stateless_runs_post(body: RunCreateStateless, request: Request) -> Union
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                 detail=INTERNAL_ERROR_MESSAGE,
             ) from e
-        
+
         # Run the static analyzer workflow on the downloaded repository.
         workflow = StaticAnalyzerWorkflow(chain=get_llm_chain(settings))
         result = workflow.analyze(file_path)

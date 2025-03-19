@@ -1,22 +1,24 @@
-# Description: This file contains a sample graph client that makes a stateless request to the Remote Graph Server.
-# Usage: python client/stateless_client.py
+"""
+stateless_client.py
+
+This modules contains a sample graph client that makes a stateless 
+request to the Remote Graph Server.
+
+Usage: python client/stateless_client.py
+"""
 
 import json
 import os
-import sys
 import traceback
 import uuid
 from typing import Any, Dict, TypedDict
 
 import requests
 from langgraph.graph import END, START, StateGraph
-from requests.exceptions import (ConnectionError, HTTPError, RequestException,
-                                 Timeout)
+from requests.exceptions import HTTPError, RequestException, Timeout
 
 # Get the absolute path of the parent directory
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-# Add the parent directory to sys.path
 sys.path.insert(0, parent_dir)
 
 from app.core.logging_config import configure_logging
@@ -24,10 +26,11 @@ from app.core.utils import load_environment_variables
 
 logger = configure_logging()
 
+
 def configure_remote_server() -> str:
     """
     Configures the remote server URL using environment variables.
-    
+
     Returns:
         str: The remote server URL.
     """
@@ -63,7 +66,9 @@ class GraphState(TypedDict):
     static_analyzer_output: str
 
 
-def node_remote_request_stateless(state: Dict[str, Any], remote_server_url: str) -> Dict[str, Any]:
+def node_remote_request_stateless(
+    state: Dict[str, Any], remote_server_url: str
+) -> Dict[str, Any]:
     """
     Handles a stateless request to the Remote Graph Server.
 
@@ -183,7 +188,10 @@ def build_graph() -> Any:
     remote_server_url = configure_remote_server()
 
     builder = StateGraph(GraphState)
-    builder.add_node("node_remote_request_stateless", lambda state: node_remote_request_stateless(state, remote_server_url))
+    builder.add_node(
+        "node_remote_request_stateless",
+        lambda state: node_remote_request_stateless(state, remote_server_url),
+    )
     builder.add_edge(START, "node_remote_request_stateless")
     builder.add_edge("node_remote_request_stateless", END)
     return builder.compile()
@@ -194,13 +202,13 @@ def main():
     load_environment_variables()
 
     graph = build_graph()
-    
+
     github_details = fetch_github_environment_variables()
     input = {"github": github_details}
     logger.info({"event": "invoking_graph", "input": input})
-    
+
     result = graph.invoke(input)
-    
+
     if "output" in result:
         logger.info({"event": "final_result", "result": result["output"]})
     else:

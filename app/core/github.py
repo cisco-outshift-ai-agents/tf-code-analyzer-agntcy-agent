@@ -8,10 +8,10 @@ from urllib.parse import urlparse
 import requests
 from fastapi import HTTPException
 from github import Github, GithubException
-from pydantic import BaseModel, Field, SecretStr
-from typing import Optional
+from pydantic import SecretStr
 
 logger = logging.getLogger(__name__)
+
 
 class GithubClient:
     def __init__(self, github_token: SecretStr):
@@ -26,7 +26,7 @@ class GithubClient:
             else:
                 g = Github(github_token.get_secret_value())
                 user = g.get_user()
-                logger.info(f"Authenticated user: %s", user.login)
+                logger.info("Authenticated user: %s", user.login)
             return g
         except GithubException as e:
             logger.error(f"GitHub authentication failed: {e}")
@@ -66,7 +66,7 @@ class GithubClient:
             # Build the GitHub API URL to download the zipball for the
             # specified branch.
             api_url = f"https://api.github.com/repos/{owner}/{repo}/zipball/{branch}"
-            logger.info(f"Downloading zipball from: %s", api_url)
+            logger.info("Downloading zipball from: %s", api_url)
 
             headers = {
                 "Accept": "application/vnd.github.v3+json",
@@ -98,7 +98,7 @@ class GithubClient:
 
             extracted_repo_path = os.path.join(destination_folder, folder_name)
             logger.info(
-                f"Repository extracted successfully to '%s'", extracted_repo_path
+                "Repository extracted successfully to '%s'", extracted_repo_path
             )
             return extracted_repo_path
 
