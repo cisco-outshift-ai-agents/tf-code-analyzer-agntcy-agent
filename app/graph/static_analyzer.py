@@ -120,7 +120,6 @@ class StaticAnalyzer:
                 }
             )
             response = self.chain.invoke(prompt)
-            log.info(f"Static analyzer output: {response}")
 
         except Exception as e:
             log.error(

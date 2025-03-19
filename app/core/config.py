@@ -64,10 +64,8 @@ def load_and_validate_app_settings() -> AppSettings:
             "AZURE_OPENAI_API_VERSION": settings.AZURE_OPENAI_API_VERSION,
         }.items() if not value
     ]
-    logger.info(f"Missing Azure settings: {missing_azure}")
 
     missing_openai = ["OPENAI_API_KEY"] if not settings.OPENAI_API_KEY else []
-    logger.info(f"Missing OpenAI settings: {missing_openai}")
     if missing_azure and missing_openai:
         raise ValueError(
             f"Missing required LLM settings. Either provide:"
