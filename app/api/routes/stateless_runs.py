@@ -3,8 +3,9 @@ from __future__ import annotations
 import logging
 from http import HTTPStatus
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
 
 from core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
 from core.github import GithubClient
@@ -20,7 +21,6 @@ from models.models import (
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)
 
-
 @router.post(
     "/runs",
     response_model=RunCreateStatelessOutput,
@@ -32,12 +32,11 @@ logger = logging.getLogger(__name__)
     tags=["Stateless Runs"],
 )
 def run_stateless_runs_post(
-    body: RunCreateStateless, request: Request
-) -> Union[Any, ErrorResponse]:
+    body: RunCreateStateless, request: Request) -> Union[Any, ErrorResponse]:
     """
     Create Background Run
     """
-
+    logger.info("Received request to run the static analyzer workflow")
     settings = request.app.state.settings
 
     try:
@@ -49,13 +48,23 @@ def run_stateless_runs_post(
         # Retrieve the 'input' field and ensure it is a dictionary.
         input_field = body.input
         if not isinstance(input_field, dict):
+            logger.info("Invalid input format")
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Invalid input format",
             )
 
         # Retrieve the 'github' field from the input dictionary.
-        github_request = input_field.get("github")
+        github_request = input_field.get("github_details")
+        logger.info("Github request: %s", github_request)
+
+        # Ensure github_request is not empty
+        if not github_request:
+            logger.info("Github details not provided")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Github details not provided",
+            )
 
         # Initialize the Github client and download the repository.
         github_client = GithubClient(github_request.github_token)

@@ -2,19 +2,41 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+import asyncio
 import uvicorn
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
 
 from api.routes import stateless_runs
 from core.config import APISettings, load_and_validate_app_settings
 from core.logging_config import configure_logging
 from core.utils import load_environment_variables, check_required_binaries
-
+from grpc.agp import AGPConfig
+from starlette.requests import Request
 
 logger = configure_logging()  # Apply global logging settings
 
+class Log422Middleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if response.status_code == 422:
+            try:
+                body = await request.json()
+            except Exception:
+                body = "Unable to parse body"
+
+            log_data = {
+                "url": str(request.url),
+                "method": request.method,
+                "headers": dict(request.headers),
+                "query_params": dict(request.query_params),
+                "body": body,
+            }
+            logger.error(f"422 Validation Error: {log_data}")
+        return response
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -130,6 +152,7 @@ def create_app(settings: APISettings) -> FastAPI:
         allow_headers=["*"],
         expose_headers=["*"],
     )
+    app.add_middleware(Log422Middleware)
 
     # Load and validate application settings
     try:
@@ -140,8 +163,40 @@ def create_app(settings: APISettings) -> FastAPI:
 
     return app
 
+async def agp_connect(app: FastAPI):
+    """
+    Connects to the AGP Server via GRPC
+    """
+    # agp_config = AGPConfig()
+    AGPConfig.gateway_container.set_config(
+        endpoint="http://127.0.0.1:46357", insecure=True
+    )
+    AGPConfig.gateway_container.set_fastapi_app(app)
 
-def main() -> None:
+    # Call connect with retry
+    _ = await AGPConfig.gateway_container.connect_with_retry(
+        agent_container=AGPConfig.agent_container, max_duration=10, initial_delay=1
+    )
+    
+    try:
+        await AGPConfig.gateway_container.start_server(
+            agent_container=AGPConfig.agent_container
+        )
+    except RuntimeError as e:
+        logger.error("RuntimeError: %s", e)
+    except Exception as e:
+        logger.info("Unhandled error: %s", e)
+
+
+async def serve_rest(app: FastAPI, settings: APISettings):
+    """
+    Starts the Uvicorn server to serve the FastAPI application.
+    """
+    config = uvicorn.Config(app, host=settings.TF_CODE_ANALYZER_HOST, port=settings.TF_CODE_ANALYZER_PORT, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+async def main() -> None:
     """
     Entry point for running the FastAPI application.
 
@@ -162,16 +217,11 @@ def main() -> None:
     check_required_binaries()
 
     logger = logging.getLogger("app")  # Default logger for main script
-    logger.info("Starting FastAPI application...")
+    logger.info("Starting REST server and AGP client")
 
-    # Start the FastAPI application using Uvicorn
-    uvicorn.run(
-        create_app(settings),
-        host=settings.TF_CODE_ANALYZER_HOST,
-        port=settings.TF_CODE_ANALYZER_PORT,
-        log_level="info",
-    )
-
+    app = create_app(settings)
+    #TODO: handle case if agp gateway is not available so rest is still available
+    await asyncio.gather(serve_rest(app, settings),agp_connect(app))
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

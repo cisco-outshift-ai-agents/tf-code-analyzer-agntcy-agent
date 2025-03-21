@@ -24,9 +24,8 @@ class GithubClient:
                 g = Github()
                 logger.info("No GitHub token provided. Using anonymous access.")
             else:
-                g = Github(github_token.get_secret_value())
-                user = g.get_user()
-                logger.info("Authenticated user: %s", user.login)
+                g = Github(github_token)
+                _ = g.get_rate_limit()
             return g
         except GithubException as e:
             logger.error(f"GitHub authentication failed: {e}")
@@ -72,7 +71,7 @@ class GithubClient:
                 "Accept": "application/vnd.github.v3+json",
             }
             if self.token is not None:
-                headers["Authorization"] = f"token {self.token.get_secret_value()}"
+                headers["Authorization"] = f"token {self.token}"
 
             # Make the GET request with stream enabled.
             response = requests.get(api_url, headers=headers, stream=True, timeout=30)

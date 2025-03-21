@@ -11,6 +11,7 @@ import json
 import os
 import traceback
 import uuid
+import sys
 from typing import Any, Dict, TypedDict
 
 import requests
@@ -18,7 +19,7 @@ from langgraph.graph import END, START, StateGraph
 from requests.exceptions import HTTPError, RequestException, Timeout
 
 # Get the absolute path of the parent directory
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, parent_dir)
 
 from app.core.logging_config import configure_logging
@@ -48,21 +49,19 @@ def fetch_github_environment_variables() -> Dict[str, str | None]:
     Returns:
         Dict[str, str]: A dictionary containing the GitHub environment variables.
     """
-    github = {
+    github_details = {
         "repo_url": os.getenv("GITHUB_REPO_URL"),
         "github_token": os.getenv("GITHUB_TOKEN"),
         "branch": os.getenv("GITHUB_BRANCH"),
     }
-    return github
+    return github_details
 
 
 # Define the graph state
-
-
 class GraphState(TypedDict):
     """Represents the state of the graph, containing the file_path."""
 
-    github: Dict[str, str]
+    github_details: Dict[str, str]
     static_analyzer_output: str
 
 
@@ -78,8 +77,8 @@ def node_remote_request_stateless(
     Returns:
         Dict[str, Any]: The updated state of the graph after processing the request.
     """
-    if "github" not in state or not state["github"]:
-        error_msg = "GraphState is missing 'github' key"
+    if "github_details" not in state or not state["github_details"]:
+        error_msg = "GraphState is missing 'github_details' key"
         logger.error(json.dumps({"error": error_msg}))
         return {"error": error_msg}
 
@@ -92,7 +91,7 @@ def node_remote_request_stateless(
         "agent_id": "remote_agent",
         "model": "gpt-4o",
         "metadata": {"id": str(uuid.uuid4())},
-        "input": {"github": state["github"]},
+        "input": {"github_details": state["github_details"]},
     }
     logger.info(f"Sending request to remote server with payload: {payload}")
 
@@ -204,7 +203,7 @@ def main():
     graph = build_graph()
 
     github_details = fetch_github_environment_variables()
-    input = {"github": github_details}
+    input = {"github_details": github_details}
     logger.info({"event": "invoking_graph", "input": input})
 
     result = graph.invoke(input)

@@ -187,7 +187,7 @@ class GithubRequest(BaseModel):
     branch: str = Field(
         ..., min_length=1, description="Branch name to download"
     )  # Required
-    github_token: Optional[SecretStr] = Field(
+    github_token: Optional[str] = Field(
         None, description="GitHub Personal Access Token (optional)"
     )  # Optional
 
@@ -198,15 +198,15 @@ class RunCreateStateless(BaseModel):
         description="The agent ID to run. If not provided will use the default agent for this service.",
         title="Agent Id",
     )
-    input: Dict[str, GithubRequest] = Field(
+    input: Dict[str, Union[GithubRequest, List[Dict[str, str]]]] = Field(
         None,
         description="The input to the graph, expecting a dictionary with a 'github' key.",
         title="Input",
     )
-    messages: Optional[List[Message]] = Field(
+    route: Optional[str] = Field(
         None,
-        description="The current Messages of the thread. If messages are contained in Thread.values, implementations should remove them from values when returning messages. When this key isn't present it means the thread/agent doesn't support messages.",
-        title="Messages",
+        description="The route to send the request to.",
+        title="Route",
     )
 
 
