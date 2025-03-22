@@ -47,7 +47,7 @@ def fetch_github_environment_variables() -> Dict[str, str | None]:
 class GraphState(TypedDict):
     """Represents the state of the graph, containing the file_path."""
 
-    github: Dict[str, str]
+    github_details: Dict[str, str]
     static_analyzer_output: str
 
 async def send_and_recv(payload: Dict[str, Any], remote_agent: str) -> Dict[str, Any]:
@@ -87,14 +87,14 @@ async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
     Returns:
         Command[Literal["exception_node", "end_node"]]: Command to transition to the next node.
     """
-    if "github" not in state or not state["github"]:
-        error_msg = "GraphState is missing 'github' key"
+    if "github_details" not in state or not state["github_details"]:
+        error_msg = "GraphState is missing 'github_details' key"
         logger.error(json.dumps({"error": error_msg}))
         return {"error": error_msg}
 
     payload: Dict[str,Any] = {
         "agent_id": "remote_agent",
-        "input": {"github": state["github"], "messages": [{"content": "is_present"}]},
+        "input": {"github_details": state["github_details"], "messages": [{"content": "is_present"}]},
         "route": "/api/v1/runs"
     }
 
@@ -152,7 +152,7 @@ async def main():
     graph = await build_graph()
     
     github_details = fetch_github_environment_variables()
-    input = {"github": github_details}
+    input = {"github_details": github_details}
     logger.info({"event": "invoking_graph", "input": input})
     
     result = await graph.ainvoke(input)

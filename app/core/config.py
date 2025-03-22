@@ -23,6 +23,7 @@ class APISettings(BaseSettings):
     DESCRIPTION: str = "Application to run linters on Terraform code"
     TF_CODE_ANALYZER_HOST: str = "127.0.0.1"
     TF_CODE_ANALYZER_PORT: int = 8123
+    AGP_GATEWAY_ENDPOINT: str = "http://127.0.0.1:46357"
 
 
 class AppSettings(BaseSettings):

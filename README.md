@@ -3,10 +3,28 @@
 [![Contributor-Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-fbab2c.svg)](CODE_OF_CONDUCT.md)
 
 ## **📌 About the Project**
-This repository contains a **Terraform Code Analyzer AI Agent Protocol** built with FastAPI. It includes:
-- JSON-based logging
-- CORS configuration
-- Route tagging
+This repository contains a **Terraform Code Analyzer AI Agent**, built with **FastAPI**, that can operate in two modes:
+
+- As a **standard API** compatible with [LangChain’s Agent Protocol](https://github.com/langchain-ai/agent-protocol) — an open-source framework for interfacing with AI agents.
+- As a **client of the Agent Gateway Protocol (AGP)** — a gRPC-based protocol enabling secure and scalable communication between AI agents.
+
+## Key Features
+
+- **Dual Interface Support**:
+  - **LangChain Agent Protocol API**: Exposes HTTP endpoints following the Agent Protocol spec for easy integration with LangChain-based ecosystems.
+  - **AGP Client (Fire-and-Forget Only)**: Sends non-blocking, one-way messages via AGP — ideal for asynchronous agent workflows without waiting for a response.
+
+- **Security**:  
+  When operating via AGP, all communication is protected using authentication, authorization, and end-to-end encryption.
+
+- **JSON-based Logging**:  
+  Structured, machine-readable logs to support observability and debugging.
+
+- **CORS Configuration**:  
+  Enables secure cross-origin API access from web clients or frontends.
+
+- **Route Tagging**:  
+  Tagged routes for better documentation, navigation, and maintainability.
 
 ---
 
@@ -75,6 +93,14 @@ OPENAI_TEMPERATURE=0.7 # Adjust temperature for response randomness
 
 ---
 
+## **🔹 AGP Client Configuration**
+
+```dotenv
+AGP_GATEWAY_ENDPOINT = "http://<your-agp-gateway-host>:<port>"
+```
+
+---
+
 ## **🔹 GitHub Configuration (For Client Application)**
 
 If running the client, set these variables to interact with GitHub:
@@ -98,7 +124,7 @@ GITHUB_TOKEN=your-github-token  # (Optional) Provide a token for private repos
 You can run the application by executing:
 
 ```bash
-python -m app.main
+python app/main.py
 ```
 ---
 
@@ -107,7 +133,7 @@ python -m app.main
 On a successful run, you should see logs in your terminal similar to the snippet below. The exact timestamps, process IDs, and file paths will vary:
 
 ```bash
-python -m app.main
+python app/main.py
 {"timestamp": "2025-03-11 13:24:36,754", "level": "INFO", "message": "Logging is initialized. This should appear in the log file.", "module": "logging_config", "function": "configure_logging", "line": 142, "logger": "app", "pid": 5004}
 {"timestamp": "2025-03-11 13:24:36,754", "level": "INFO", "message": "Starting FastAPI application...", "module": "main", "function": "main", "line": 155, "logger": "app", "pid": 5004}
 {"timestamp": "2025-03-11 13:24:36,758", "level": "INFO", "message": ".env file loaded from <your_cloned_repo_path>/.env", "module": "utils", "function": "load_environment_variables", "line": 64, "logger": "root", "pid": 5004}
@@ -116,6 +142,7 @@ INFO:     Waiting for application startup.
 {"timestamp": "2025-03-11 13:24:36,864", "level": "INFO", "message": "Starting Terraform Code Analyzer Agent", "module": "main", "function": "lifespan", "line": 39, "logger": "root", "pid": 5004}
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8133 (Press CTRL+C to quit)
+{"timestamp": "2025-03-21 17:01:31,084", "level": "INFO", "message": "AGP client started for agent: cisco/default/<bound method AgentContainer.get_local_agent of <agp_api.agent.agent_container.AgentContainer object at 0x106dbba10>>", "module": "gateway_container", "function": "start_server", "line": 321, "logger": "agp_api.gateway.gateway_container", "pid": 67267}
 ```
 
 This output confirms that:
@@ -126,18 +153,39 @@ This output confirms that:
 
 ---
 
-### Client
+### AP REST Client
 
-Change to `client` folder
+*Change to `client` folder*
 
 ```bash
-python -m client.stateless_client
+python client/stateless_client
 ```
 
 On a successful remote graph run you should see logs in your terminal similar to the snippet below:
 
 ```bash
 {"timestamp": "2025-03-11 13:26:29,622", "level": "ERROR", "message": "{'event': 'final_result', 'result': {'github': {'repo_url': '<your_repo_url>', 'github_token': '<your_token>', 'branch': '<your_branch>'}, 'static_analyzer_output': '<analyzer_output>'}}", "module": "stateless_client", "function": "<module>", "line": 174, "logger": "__main__", "pid": 7529}
+```
+
+
+### Running the AGP Gateway & Testing Agent Communication
+
+To enable agent-to-agent communication via the **Agent Gateway Protocol (AGP)**, you’ll first need to run the AGP Gateway locally. A shell script is included to simplify this.
+
+*Start the AGP Gateway*
+
+From the root of the project, run:
+
+```bash
+./scripts/run_agp_gateway.sh
+```
+
+*Run the client*
+
+Make sure to run the client in a separate terminal as the service.
+
+```bash
+python client/agp/agp_client.py
 ```
 
 ---
@@ -212,3 +260,7 @@ Project Link:
 
 This template was adapted from
 [https://github.com/othneildrew/Best-README-Template](https://github.com/othneildrew/Best-README-Template).
+
+To Add:
+- How to run AGP Gateway (docker image shell script)
+- AGP integration details

@@ -9,12 +9,11 @@ from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-
+from agp.agp import AGPConfig
 from api.routes import stateless_runs
 from core.config import APISettings, load_and_validate_app_settings
 from core.logging_config import configure_logging
 from core.utils import load_environment_variables, check_required_binaries
-from grpc.agp import AGPConfig
 from starlette.requests import Request
 
 logger = configure_logging()  # Apply global logging settings
@@ -163,29 +162,30 @@ def create_app(settings: APISettings) -> FastAPI:
 
     return app
 
-async def agp_connect(app: FastAPI):
+async def agp_connect(app: FastAPI, settings: APISettings):
     """
-    Connects to the AGP Server via GRPC
+    Attempts to connect to the AGP Gateway, logs errors but does not raise.
+    This ensures the REST server remains available even if AGP fails.
     """
-    # agp_config = AGPConfig()
-    AGPConfig.gateway_container.set_config(
-        endpoint="http://127.0.0.1:46357", insecure=True
-    )
-    AGPConfig.gateway_container.set_fastapi_app(app)
-
-    # Call connect with retry
-    _ = await AGPConfig.gateway_container.connect_with_retry(
-        agent_container=AGPConfig.agent_container, max_duration=10, initial_delay=1
-    )
-    
     try:
+        AGPConfig.gateway_container.set_config(
+            endpoint=settings.AGP_GATEWAY_ENDPOINT, insecure=True
+        )
+        AGPConfig.gateway_container.set_fastapi_app(app)
+
+        _ = await AGPConfig.gateway_container.connect_with_retry(
+            agent_container=AGPConfig.agent_container, max_duration=10, initial_delay=1
+        )
+
         await AGPConfig.gateway_container.start_server(
             agent_container=AGPConfig.agent_container
         )
+        logger.info("AGP client connected and running.")
     except RuntimeError as e:
-        logger.error("RuntimeError: %s", e)
+        logger.error("AGP RuntimeError: %s", e)
     except Exception as e:
-        logger.info("Unhandled error: %s", e)
+        logger.error("AGP client connection failed: %s. Continuing without AGP.", e)
+
 
 
 async def serve_rest(app: FastAPI, settings: APISettings):
@@ -209,19 +209,20 @@ async def main() -> None:
     Returns:
         None
     """
-    # Load environment variables before starting the application
     load_environment_variables()
     settings = APISettings()
 
-    # Validate that required binaries are installed
     check_required_binaries()
 
-    logger = logging.getLogger("app")  # Default logger for main script
-    logger.info("Starting REST server and AGP client")
+    logger.info("Starting REST server and initializing AGP client (if available).")
 
     app = create_app(settings)
-    #TODO: handle case if agp gateway is not available so rest is still available
-    await asyncio.gather(serve_rest(app, settings),agp_connect(app))
+
+    # Launch REST server and AGP client in parallel
+    await asyncio.gather(
+        serve_rest(app, settings),
+        agp_connect(app, settings)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
