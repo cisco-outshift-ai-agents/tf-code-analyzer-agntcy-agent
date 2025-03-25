@@ -1,21 +1,21 @@
-# Terraform Linter AI Agent
+# Terraform Code Analyzer AI Agent
 [![Release](https://img.shields.io/github/v/release/cisco-ai-agents/tf-code-analyzer-agntcy-agent?display_name=tag)](CHANGELOG.md)
 [![Contributor-Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-fbab2c.svg)](CODE_OF_CONDUCT.md)
 
 Streamline execution of Terraform linters, with actionable AI insights as output.
 
 ## **Overview**
-The **Terraform Linter AI Agent** conforms to AGNTCY specs as described https://github.com/agntcy.
+The **Terraform Code Analyzer AI Agent** conforms to AGNTCY specs as described https://github.com/agntcy.
 
-This langchain agent runs `terraform validate` and `tflint` linters on a set of Terraform/OpenTofu code inputs, and interprets the results using OpenAI. By leveraging OpenAI, the agent provides actionable insights and guidance on how to resolve issues identified by the linter.
+This langchain agent runs `terraform validate` and `tflint` linters on a set of Terraform code inputs, and interprets the results using OpenAI. By leveraging OpenAI, the agent provides actionable insights and guidance on how to resolve issues identified by the linter.
 
-It can be used by developers who are building GenAI agentic applications that would benefit from insertion of basic linting of Terraform or OpenTofu code. 
+It can be used by developers who are building GenAI agentic applications that would benefit from insertion of basic linting of Terraform code. 
 
-The **Terraform Linter AI Agent** provides value to agentic application developers by saving the effort of writing code to run standard terraform linters by providing an out-of-the-box solution that can be easily inserted into your agentic application.
+The **Terraform Code Analyzer AI Agent** provides value to agentic application developers by saving the effort of writing code to run standard terraform linters by providing an out-of-the-box solution that can be easily inserted into your agentic application.
 
 
 ## **📌 About the Project**
-This repository contains a **Terraform Linter AI Agent**. It performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns.
+This repository contains a **Terraform Code Analyzer AI Agent**. It performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns.
 
 There are two key analysis steps executed with this agent:
 1. runs `terraform validate` and returns the results; if this run fails, then stop.
@@ -280,9 +280,12 @@ Project Link:
 ---
 ## Acknowledgements
 
+- [tflint](https://github.com/terraform-linters) for the linter.
+- [Langgraph](https://github.com/langchain-ai/langgraph) for the agentic platform.
+- [https://github.com/othneildrew/Best-README-Template](https://github.com/othneildrew/Best-README-Template), from which this readme was adapted
 
-This template was adapted from
-[https://github.com/othneildrew/Best-README-Template](https://github.com/othneildrew/Best-README-Template).
+For more information about our various agents, please visit the [agntcy project page](https://github.com/agntcy).
+
 
 To Add:
 - How to run AGP Gateway (docker image shell script)
