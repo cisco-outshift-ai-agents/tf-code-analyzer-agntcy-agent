@@ -1,9 +1,27 @@
-# Terraform Code Analyzer AI Agent
+# Terraform Linter AI Agent
 [![Release](https://img.shields.io/github/v/release/cisco-ai-agents/tf-code-analyzer-agntcy-agent?display_name=tag)](CHANGELOG.md)
 [![Contributor-Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-fbab2c.svg)](CODE_OF_CONDUCT.md)
 
+Streamline execution of Terraform linters, with actionable AI insights as output.
+
+## **Overview**
+The **Terraform Linter AI Agent** conforms to AGNTCY specs as described https://github.com/agntcy.
+
+This langchain agent runs `terraform validate` and `tflint` linters on a set of Terraform/OpenTofu code inputs, and interprets the results using OpenAI. By leveraging OpenAI, the agent provides actionable insights and guidance on how to resolve issues identified by the linter.
+
+It can be used by developers who are building GenAI agentic applications that would benefit from insertion of basic linting of Terraform or OpenTofu code. 
+
+The **Terraform Linter AI Agent** provides value to agentic application developers by saving the effort of writing code to run standard terraform linters by providing an out-of-the-box solution that can be easily inserted into your agentic application.
+
+
 ## **📌 About the Project**
-This repository contains a **Terraform Code Analyzer AI Agent**, built with **FastAPI**, that can operate in two modes:
+This repository contains a **Terraform Linter AI Agent**. It performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns.
+
+There are two key analysis steps executed with this agent:
+1. runs `terraform validate` and returns the results; if this run fails, then stop.
+2. runs `tflint` and returns the results. Note that to allow execution of `tflint`, it first runs `terraform init`.
+
+This agent was built with **FastAPI**, that can operate in two modes:
 
 - As a **standard API** compatible with [LangChain’s Agent Protocol](https://github.com/langchain-ai/agent-protocol) — an open-source framework for interfacing with AI agents.
 - As a **client of the Agent Gateway Protocol (AGP)** — a gRPC-based protocol enabling secure and scalable communication between AI agents.
@@ -236,6 +254,7 @@ Upon successful execution, you should see:
 
 See the [open issues](https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent/issues) for a list
 of proposed features (and known issues).
+
 ---
 ## Contributing
 
@@ -243,11 +262,13 @@ Contributions are what make the open source community such an amazing place to
 learn, inspire, and create. Any contributions you make are **greatly
 appreciated**. For detailed contributing guidelines, please see
 [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ---
 ## License
 
 Distributed under the Apache-2.0 License. See [LICENSE](LICENSE) for more
 information.
+
 ---
 ## Contact
 
@@ -255,8 +276,10 @@ Aditi Gupta  - [@therealaditigupta](https://github.com/therealaditigupta) - adit
 
 Project Link:
 [https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent](https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent)
+
 ---
 ## Acknowledgements
+
 
 This template was adapted from
 [https://github.com/othneildrew/Best-README-Template](https://github.com/othneildrew/Best-README-Template).
