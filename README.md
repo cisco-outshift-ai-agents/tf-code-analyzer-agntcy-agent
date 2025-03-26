@@ -272,7 +272,7 @@ information.
 ---
 ## Contact
 
-Aditi Gupta  - [@therealaditigupta](https://github.com/therealaditigupta) - aditigu2@cisco.com
+[cisco-outshift-ai-agents@cisco.com](mailto:cisco-outshift-ai-agents@cisco.com)
 
 Project Link:
 [https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent](https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent)
