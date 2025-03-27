@@ -11,7 +11,7 @@ This langchain agent runs `terraform validate` and `tflint` linters on a set of 
 
 It can be used by developers who are building GenAI agentic applications that would benefit from insertion of basic linting of Terraform code. 
 
-The **Terraform Code Analyzer AI Agent** offers value to agentic application developers by saving the effort of writing code to run standard terraform linters, providing an out-of-the-box solution that can be easily inserted into agentic applications using the agntcy approach.
+The **Terraform Code Analyzer AI Agent** offers value to agentic application developers by saving the effort of writing code to run standard terraform linters, providing an out-of-the-box solution that can be easily inserted into agentic applications via its supported APIs.
 
 
 ## **📌 About the Project**
