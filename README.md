@@ -195,7 +195,7 @@ To enable agent-to-agent communication via the **Agent Gateway Protocol (AGP)**,
 From the root of the project, run:
 
 ```bash
-./scripts/run_agp_gateway.sh
+./client/agp/run_agp_gateway.sh
 ```
 
 *Run the client*
