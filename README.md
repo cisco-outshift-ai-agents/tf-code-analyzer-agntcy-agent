@@ -23,7 +23,7 @@ There are two key analysis steps executed with this agent:
 
 This agent was built with **FastAPI**, that can operate in two modes:
 
-- As a **standard API** compatible with [LangChain’s Agent Protocol](https://github.com/langchain-ai/agent-protocol) — an open-source framework for interfacing with AI agents.
+- As a **standard API** compatible with [LangChain's Agent Protocol](https://github.com/langchain-ai/agent-protocol) — an open-source framework for interfacing with AI agents.
 - As a **client of the Agent Gateway Protocol (AGP)** — a gRPC-based protocol enabling secure and scalable communication between AI agents.
 
 ## Key Features
@@ -188,7 +188,7 @@ On a successful remote graph run you should see logs in your terminal similar to
 
 ### Running the AGP Gateway & Testing Agent Communication
 
-To enable agent-to-agent communication via the **Agent Gateway Protocol (AGP)**, you’ll first need to run the AGP Gateway locally. A shell script is included to simplify this.
+To enable agent-to-agent communication via the **Agent Gateway Protocol (AGP)**, you'll first need to run the AGP Gateway locally. A shell script is included to simplify this.
 
 *Start the AGP Gateway*
 
@@ -226,6 +226,21 @@ http://0.0.0.0:8133/docs
 (Adjust the host and port if you override them via environment variables.)
 
 ---
+## Building the Docker Image
+
+To build the Docker image manually:
+
+```bash
+docker build -t tf-code-analyzer .
+```
+
+The Dockerfile includes:
+- Python 3.12 slim base image
+- Git and curl for repository access
+- Rust toolchain for dependencies
+- Terraform installation
+- Application code and dependencies
+
 ## Running as a LangGraph Studio
 
 You need to install Rust: <https://www.rust-lang.org/tools/install>
