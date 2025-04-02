@@ -6,18 +6,12 @@ services:
     ports:
       - "46357:46357"
     environment:
-      - PASSWORD=dummy_password
+      - PASSWORD=${AGP_GATEWAY_PASSWORD:-dummy_password}
     volumes:
       - ./client/agp/server-config.yaml:/config.yaml
     command: ["/gateway", "--config", "/config.yaml"]
     networks:
       - agp-network
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "46357"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
 
   tf-code-analyzer:
     build:
@@ -34,17 +28,12 @@ services:
       - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
       - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+    command: >
+      sh -c "sleep 10 && python -m app.main"
     depends_on:
-      agp-gateway:
-        condition: service_healthy
+      - agp-gateway
     networks:
       - agp-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8133/"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   # agp-client:
   #   build:
