@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  agp-gateway:
+    image: ghcr.io/agntcy/agp/gw:0.3.6
+    ports:
+      - "46357:46357"
+    environment:
+      - PASSWORD=dummy_password
+    volumes:
+      - ./client/agp/server-config.yaml:/config.yaml
+    command: ["/gateway", "--config", "/config.yaml"]
+    networks:
+      - agp-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "46357"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  tf-code-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8133:8133"
+    environment:
+      - TF_CODE_ANALYZER_HOST=0.0.0.0
+      - TF_CODE_ANALYZER_PORT=8133
+      - AGP_GATEWAY_ENDPOINT=http://agp-gateway:46357
+      # Azure OpenAI Configuration
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+    depends_on:
+      agp-gateway:
+        condition: service_healthy
+    networks:
+      - agp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8133/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # agp-client:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     - GITHUB_REPO_URL=${GITHUB_REPO_URL:-https://github.com/test/repo}
+  #     - GITHUB_TOKEN=${GITHUB_TOKEN:-test-token}
+  #     - GITHUB_BRANCH=${GITHUB_BRANCH:-main}
+  #     - AGP_GATEWAY_ENDPOINT=http://agp-gateway:46357
+  #   command: ["python", "client/agp/agp_client.py"]
+  #   depends_on:
+  #     agp-gateway:
+  #       condition: service_healthy
+  #     tf-code-analyzer:
+  #       condition: service_healthy
+  #   networks:
+  #     - agp-network
+
+networks:
+  agp-network:
+    driver: bridge 
