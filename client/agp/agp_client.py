@@ -24,8 +24,7 @@ import uuid
 from agp_api.gateway.gateway_container import GatewayContainer
 from dotenv import load_dotenv
 from agp_api.agent.agent_container import AgentContainer
-from langgraph.graph.graph import START, END
-from langgraph.graph import StateGraph
+from langgraph.graph import END, START, StateGraph
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, parent_dir)
 from client.utils.logging import configure_logging
@@ -82,24 +81,17 @@ async def send_and_recv(payload: Dict[str, Any], remote_agent: str) -> Dict[str,
         The response is expected to be a JSON string that can be decoded into a dictionary
         containing either an 'error' field (for failures) or an 'output' field with 'messages'
     """
-    try:
-        await Config.gateway_container.publish_messsage(
-            payload, agent_container=Config.agent_container, remote_agent=remote_agent
-        )
-        _, recv = await Config.gateway_container.gateway.receive()
 
-        try:
-            response_data = json.loads(recv.decode("utf8"))
-            logger.info(f"Received response from remote agent: {response_data}")
-            return response_data
-        except json.JSONDecodeError as e:
-            error_msg = f"Failed to decode response: {str(e)}"
-            logger.error(error_msg)
-            return {"error": error_msg}
-    except Exception as e:
-        error_msg = str(e)
-        logger.error(f"Error in send_and_recv: {error_msg}")
-        return {"error": error_msg}
+    await Config.gateway_container.publish_messsage(
+        payload, agent_container=Config.agent_container, remote_agent=remote_agent
+    )
+    _, recv = await Config.gateway_container.gateway.receive()
+
+    response_data = json.loads(recv.decode("utf8"))
+
+    logger.info(f"Received response from remote agent: {response_data}")
+
+    return response_data
 
 async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
     """
@@ -123,45 +115,40 @@ async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
     }
 
     res = await send_and_recv(payload, remote_agent=Config.remote_agent)
-    return res
+
+    if "output" in res:
+        if "static_analyzer_output" in res["output"]:
+            return res["output"]
+
+    return state
 
 async def init_client_gateway_conn(remote_agent: str = "server"):
     """Initialize connection to the gateway.
-    Establishes connection to a gateway service using retry mechanism.
+    Establishes connection to a gateway service running on localhost using retry mechanism.
     Returns:
         None
     Raises:
         ConnectionError: If unable to establish connection after retries.
         TimeoutError: If connection attempts exceed max duration.
     Notes:
-        - Uses AGP_GATEWAY_ENDPOINT environment variable or defaults to http://127.0.0.1:46357
+        - Uses default endpoint http://127.0.0.1:46357
         - Insecure connection is enabled
         - Maximum retry duration is 10 seconds
         - Initial retry delay is 1 second
         - Targets remote agent named "server"
     """
-    gateway_endpoint = os.getenv("AGP_GATEWAY_ENDPOINT", "http://127.0.0.1:46357")
-    logger.info(f"Connecting to AGP gateway at {gateway_endpoint}")
-    logger.info(f"Using remote agent: {remote_agent}")
-    logger.info(f"Agent container config: {Config.agent_container}")
 
     Config.gateway_container.set_config(
-        endpoint=gateway_endpoint, insecure=True
+        endpoint="http://127.0.0.1:46357", insecure=True
     )
-    logger.info(f"Gateway container config set with endpoint: {gateway_endpoint}")
 
     # Call connect_with_retry
-    try:
-        _ = await Config.gateway_container.connect_with_retry(
-            agent_container=Config.agent_container,
-            max_duration=10,
-            initial_delay=1,
-            remote_agent=remote_agent,
-        )
-        logger.info("Successfully connected to AGP gateway")
-    except Exception as e:
-        logger.error(f"Failed to connect to AGP gateway: {str(e)}")
-        raise
+    _ = await Config.gateway_container.connect_with_retry(
+        agent_container=Config.agent_container,
+        max_duration=10,
+        initial_delay=1,
+        remote_agent=remote_agent,
+    )
 
 async def build_graph() -> Any:
     """
@@ -191,6 +178,6 @@ async def main():
     
     result = await graph.ainvoke(input)
     logger.info({"event": "final_result", "result": result})
-
+    
 if __name__ == "__main__":
     asyncio.run(main())

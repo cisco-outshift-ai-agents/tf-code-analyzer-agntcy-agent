@@ -2,12 +2,11 @@ import os
 import pytest
 from typing import Dict, Any
 
-# Test environment configuration
-os.environ["TF_CODE_ANALYZER_HOST"] = "127.0.0.1"
-os.environ["TF_CODE_ANALYZER_PORT"] = "8133"
-os.environ["GITHUB_REPO_URL"] = "https://github.com/test/repo"
-os.environ["GITHUB_TOKEN"] = "test_token"
-os.environ["GITHUB_BRANCH"] = "main"
+from dotenv import load_dotenv
+
+def pytest_configure(config):
+    """Called before test collection, configure global test environment."""
+    load_dotenv()  # Load environment variables once for all tests
 
 @pytest.fixture(scope="session")
 def test_environment() -> Dict[str, str]:
