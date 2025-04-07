@@ -3,7 +3,7 @@ import json
 import logging
 import pytest
 
-from client.ap.stateless_client import build_graph, fetch_github_environment_variables
+from client.ap.stateless_client import build_graph
 
 def test_ap_client(github_details):
     """

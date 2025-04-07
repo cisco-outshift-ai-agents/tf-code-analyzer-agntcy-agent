@@ -3,7 +3,7 @@ import json
 import logging
 import pytest
 
-from client.agp.agp_client import build_graph, fetch_github_environment_variables
+from client.agp.agp_client import build_graph
 
 @pytest.mark.asyncio
 async def test_agp_client(github_details):

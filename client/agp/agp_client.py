@@ -115,12 +115,10 @@ async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
     }
 
     res = await send_and_recv(payload, remote_agent=Config.remote_agent)
-
     if "output" in res:
         if "static_analyzer_output" in res["output"]:
             return res["output"]
-
-    return state
+    return res
 
 async def init_client_gateway_conn(remote_agent: str = "server"):
     """Initialize connection to the gateway.
@@ -131,15 +129,15 @@ async def init_client_gateway_conn(remote_agent: str = "server"):
         ConnectionError: If unable to establish connection after retries.
         TimeoutError: If connection attempts exceed max duration.
     Notes:
-        - Uses default endpoint http://127.0.0.1:46357
         - Insecure connection is enabled
         - Maximum retry duration is 10 seconds
         - Initial retry delay is 1 second
         - Targets remote agent named "server"
     """
 
+    endpoint = os.getenv("AGP_GATEWAY_ENDPOINT", "http://127.0.0.1:46357")
     Config.gateway_container.set_config(
-        endpoint="http://127.0.0.1:46357", insecure=True
+        endpoint=endpoint, insecure=True
     )
 
     # Call connect_with_retry
