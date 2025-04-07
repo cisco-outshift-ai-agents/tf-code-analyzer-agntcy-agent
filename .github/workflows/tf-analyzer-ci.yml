@@ -1,4 +1,4 @@
-name: Terraform Analyzer Agent CI
+name: "Terraform Analyzer CI"
 
 on:
   push:
@@ -6,19 +6,15 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  AGP_GATEWAY_ENDPOINT: ${{ secrets.AGP_GATEWAY_ENDPOINT }}
-  AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-  AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
-  AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-  AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-  GITHUB_TOKEN: ${{ github.token }}
-  GITHUB_REPO_URL: ${{ secrets.GITHUB_REPO_URL }}
-  GITHUB_BRANCH: ${{ secrets.GITHUB_BRANCH }}
-
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      TF_CODE_ANALYZER_HOST: "127.0.0.1"
+      TF_CODE_ANALYZER_PORT: "8133"
+      GITHUB_TOKEN: ${{ github.token }}
+      GITHUB_REPO_URL: ${{ secrets.GITHUB_REPO_URL }}
+      GITHUB_BRANCH: ${{ secrets.GITHUB_BRANCH }}
 
     steps:
     - uses: actions/checkout@v3
@@ -28,18 +24,29 @@ jobs:
       with:
         python-version: '3.12'
 
+    # Approach 1: Install build dependencies first
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-dev libyaml-dev
+        python -m pip install --upgrade pip wheel setuptools
+
+    # Approach 2: Use pre-built wheels
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-asyncio docker-compose
+        pip install --only-binary :all: PyYAML  # Force using pre-built wheel
+        make install
 
     - name: Build and start services
       run: |
-        docker-compose up -d --build agp-gateway tf-code-analyzer
+        make docker-up
         sleep 10  # Wait for services to be ready
         docker ps
 
-    
+    - name: Run All Tests
+      run: make test
+
     - name: Cleanup
       if: always()
-      run: docker-compose down 
+      run: make docker-down
