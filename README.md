@@ -66,6 +66,7 @@ cd tf-code-reviewer-agntcy-agent
 
 ```bash
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ### **3️⃣ Install Required Executables**
@@ -173,10 +174,10 @@ This output confirms that:
 
 ### AP REST Client
 
-*Change to `client` folder*
+*Change to `tf_ca_clients` folder*
 
 ```bash
-python client/stateless_client
+python ap/stateless_client.py
 ```
 
 On a successful remote graph run you should see logs in your terminal similar to the snippet below:
@@ -202,8 +203,10 @@ From the root of the project, run:
 
 Make sure to run the client in a separate terminal as the service.
 
+*Change to `tf_ca_clients` folder*
+
 ```bash
-python client/agp/agp_client.py
+python agp/agp_client.py
 ```
 
 ---

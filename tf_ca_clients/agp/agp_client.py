@@ -17,19 +17,17 @@
 import asyncio
 import json
 import os
-import sys
 from typing import Any, Dict, TypedDict
-import uuid
 
+from agp_api.agent.agent_container import AgentContainer
 from agp_api.gateway.gateway_container import GatewayContainer
 from dotenv import load_dotenv
-from agp_api.agent.agent_container import AgentContainer
 from langgraph.graph import END, START, StateGraph
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-sys.path.insert(0, parent_dir)
-from client.utils.logging import configure_logging
+from tf_ca_clients.utils.logging import configure_logging
 
-logger = configure_logging()
+
+logger = configure_logging(__file__)
+
 
 class Config:
     """Configuration class for AGP (Agent Gateway Protocol) client.
@@ -45,6 +43,7 @@ class Config:
     agent_container = AgentContainer()
     remote_agent = "server"
 
+
 def fetch_github_environment_variables() -> Dict[str, str | None]:
     """
     Fetches the GitHub environment variables from the system.
@@ -59,12 +58,14 @@ def fetch_github_environment_variables() -> Dict[str, str | None]:
     }
     return github
 
+
 # Define the graph state
 class GraphState(TypedDict):
     """Represents the state of the graph, containing the file_path."""
 
     github_details: Dict[str, str]
     static_analyzer_output: str
+
 
 async def send_and_recv(payload: Dict[str, Any], remote_agent: str) -> Dict[str, Any]:
     """
@@ -93,6 +94,7 @@ async def send_and_recv(payload: Dict[str, Any], remote_agent: str) -> Dict[str,
 
     return response_data
 
+
 async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
     """
     Sends a stateless request to the Remote Graph Server.
@@ -108,14 +110,18 @@ async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
         logger.error(json.dumps({"error": error_msg}))
         return {"error": error_msg}
 
-    payload: Dict[str,Any] = {
+    payload: Dict[str, Any] = {
         "agent_id": "remote_agent",
-        "input": {"github_details": state["github_details"], "messages": [{"content": "is_present"}]},
-        "route": "/api/v1/runs"
+        "input": {
+            "github_details": state["github_details"],
+            "messages": [{"content": "is_present"}],
+        },
+        "route": "/api/v1/runs",
     }
 
     res = await send_and_recv(payload, remote_agent=Config.remote_agent)
     return res
+
 
 async def init_client_gateway_conn(remote_agent: str = "server"):
     """Initialize connection to the gateway.
@@ -145,6 +151,7 @@ async def init_client_gateway_conn(remote_agent: str = "server"):
         remote_agent=remote_agent,
     )
 
+
 async def build_graph() -> Any:
     """
     Constructs the state graph for handling requests.
@@ -159,6 +166,7 @@ async def build_graph() -> Any:
     builder.add_edge("node_remote_agp", END)
     return builder.compile()
 
+
 async def main():
     """
     Main function to load environment variables, initialize the gateway connection,
@@ -166,13 +174,14 @@ async def main():
     """
     load_dotenv(override=True)
     graph = await build_graph()
-    
+
     github_details = fetch_github_environment_variables()
     input = {"github_details": github_details}
     logger.info({"event": "invoking_graph", "input": input})
-    
+
     result = await graph.ainvoke(input)
     logger.info({"event": "final_result", "result": result})
+
 
 if __name__ == "__main__":
     asyncio.run(main())

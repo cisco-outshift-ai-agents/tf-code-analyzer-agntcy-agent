@@ -27,21 +27,16 @@ import json
 import os
 import traceback
 import uuid
-import sys
 from typing import Any, Dict, TypedDict
 
 import requests
 from langgraph.graph import END, START, StateGraph
 from requests.exceptions import HTTPError, RequestException, Timeout
 
-# Get the absolute path of the parent directory
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-sys.path.insert(0, parent_dir)
-
-from app.core.logging_config import configure_logging
+from tf_ca_clients.utils.logging import configure_logging
 from app.core.utils import load_environment_variables
 
-logger = configure_logging()
+logger = configure_logging(__file__)
 
 
 def configure_remote_server() -> str:
