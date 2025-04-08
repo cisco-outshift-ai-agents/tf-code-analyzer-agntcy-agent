@@ -24,7 +24,7 @@ def test_client():
     with patch('app.main.load_and_validate_app_settings') as mock_settings:
         app_settings = AppSettings(
             OPENAI_API_KEY="test-key",
-            OPENAI_API_VERSION="gpt-4",
+            OPENAI_API_VERSION="gpt-4o",
             OPENAI_API_TYPE="openai"
         )
         mock_settings.return_value = app_settings
@@ -81,7 +81,7 @@ def test_payload(test_github_details: Dict[str, str]) -> Dict[str, Any]:
     """Fixture to provide test payload for API requests."""
     return {
         "agent_id": "remote_agent",
-        "model": "gpt-4",
+        "model": "gpt-4o",
         "metadata": {"id": "test-id"},
         "input": {"github_details": test_github_details}
     }
@@ -109,7 +109,7 @@ def test_client_openai():
     with patch('app.main.load_and_validate_app_settings') as mock_settings:
         app_settings = AppSettings(
             OPENAI_API_KEY="test-key",
-            OPENAI_API_VERSION="gpt-4",
+            OPENAI_API_VERSION="gpt-4o",
         )
         mock_settings.return_value = app_settings
         app = create_app(settings)
@@ -134,7 +134,7 @@ def test_runs_endpoint_invalid_github_details(test_client_openai, mock_github_cl
     """Test the runs endpoint with invalid GitHub details."""
     invalid_payload = {
         "agent_id": "remote_agent",
-        "model": "gpt-4",
+        "model": "gpt-4o",
         "metadata": {"id": "test-id"},
         "input": {
             "github_details": {
@@ -182,7 +182,7 @@ def test_runs_endpoint_missing_github_details(test_client_openai):
     """Test the runs endpoint when GitHub details are missing."""
     invalid_payload = {
         "agent_id": "remote_agent",
-        "model": "gpt-4",
+        "model": "gpt-4o",
         "metadata": {"id": "test-id"},
         "input": {}  # Missing github_details
     }
@@ -213,7 +213,7 @@ def test_runs_endpoint_azure_configuration(mock_analyze, mock_download_repo, tes
         assert response.status_code == 200
         assert response.json()["output"] == {"analysis": "success"}
         assert response.json()["agent_id"] == "remote_agent"
-        assert response.json()["model"] == "gpt-4"
+        assert response.json()["model"] == "gpt-4o"
 
 @patch('app.core.github.GithubClient.download_repo_zip')
 @patch('app.graph.graph.StaticAnalyzerWorkflow.analyze')
@@ -234,6 +234,6 @@ def test_runs_endpoint_openai_configuration(mock_analyze, mock_download_repo, te
         assert response.status_code == 200
         assert response.json()["output"] == {"analysis": "success"}
         assert response.json()["agent_id"] == "remote_agent"
-        assert response.json()["model"] == "gpt-4"
+        assert response.json()["model"] == "gpt-4o"
 
     

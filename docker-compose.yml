@@ -2,11 +2,12 @@ version: '3.8'
 
 services:
   agp-gateway:
-    image: ghcr.io/agntcy/agp/gw:0.3.2
+    image: ghcr.io/agntcy/agp/gw:0.3.6
     ports:
       - "46357:46357"
     environment:
       - PASSWORD=${AGP_GATEWAY_PASSWORD:-dummy_password}
+      - CONFIG_PATH=/config.yaml
     volumes:
       - ./client/agp/server-config.yaml:/config.yaml
     command: ["/gateway", "--config", "/config.yaml"]

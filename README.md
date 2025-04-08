@@ -125,14 +125,14 @@ If running the client, set these variables to interact with GitHub:
 
 ```dotenv
 # GitHub Repository Configuration
-GITHUB_REPO_URL=https://your-github-url  # The repository to analyze
-GITHUB_BRANCH=main  # The branch containing the code to be analyzed
+GH_REPO_URL=https://your-github-url  # The repository to analyze
+GH_BRANCH=main  # The branch containing the code to be analyzed
 
 # Optional GitHub Authentication
-GITHUB_TOKEN=your-github-token  # (Optional) Provide a token for private repos
+GH_TOKEN=your-github-token  # (Optional) Provide a token for private repos
 ```
 
-🔹 **Note:** If analyzing a **public repository**, `GITHUB_TOKEN` is **optional**.
+🔹 **Note:** If analyzing a **public repository**, `GH_TOKEN` is **optional**.
 
 ---
 
@@ -182,7 +182,7 @@ python client/stateless_client
 On a successful remote graph run you should see logs in your terminal similar to the snippet below:
 
 ```bash
-{"timestamp": "2025-03-11 13:26:29,622", "level": "ERROR", "message": "{'event': 'final_result', 'result': {'github': {'repo_url': '<your_repo_url>', 'github_token': '<your_token>', 'branch': '<your_branch>'}, 'static_analyzer_output': '<analyzer_output>'}}", "module": "stateless_client", "function": "<module>", "line": 174, "logger": "__main__", "pid": 7529}
+{"timestamp": "2025-03-11 13:26:29,622", "level": "ERROR", "message": "{'event': 'final_result', 'result': {'github_details': {'repo_url': '<your_repo_url>', 'github_token': '<your_token>', 'branch': '<your_branch>'}, 'static_analyzer_output': '<analyzer_output>'}}", "module": "stateless_client", "function": "<module>", "line": 174, "logger": "__main__", "pid": 7529}
 ```
 
 

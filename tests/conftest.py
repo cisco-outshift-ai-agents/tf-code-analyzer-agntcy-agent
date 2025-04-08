@@ -14,9 +14,10 @@ def test_environment() -> Dict[str, str]:
     return {
         "TF_CODE_ANALYZER_HOST": os.getenv("TF_CODE_ANALYZER_HOST", "127.0.0.1"),
         "TF_CODE_ANALYZER_PORT": os.getenv("TF_CODE_ANALYZER_PORT", "8133"),
-        "GITHUB_REPO_URL": os.getenv("GITHUB_REPO_URL", "https://github.com/test/repo"),
-        "GITHUB_TOKEN": os.getenv("GITHUB_TOKEN", "test_token"),
-        "GITHUB_BRANCH": os.getenv("GITHUB_BRANCH", "main")
+        "GH_REPO_URL": os.getenv("GH_REPO_URL", "https://github.com/test/repo"),
+        "GH_TOKEN": os.getenv("GH_TOKEN", "test_token"),
+        "GH_BRANCH": os.getenv("GH_BRANCH", "main"),
+        'AGP_GATEWAY_ENDPOINT': os.getenv("AGP_GATEWAY_ENDPOINT", "http://127.0.0.1:46357")
     }
 
 @pytest.fixture(scope="session")
@@ -28,9 +29,9 @@ def base_url(test_environment: Dict[str, str]) -> str:
 def github_details(test_environment: Dict[str, str]) -> Dict[str, str]:
     """Fixture to provide GitHub details for testing."""
     return {
-        "repo_url": test_environment["GITHUB_REPO_URL"],
-        "github_token": test_environment["GITHUB_TOKEN"],
-        "branch": test_environment["GITHUB_BRANCH"]
+        "repo_url": test_environment["GH_REPO_URL"],
+        "github_token": test_environment["GH_TOKEN"],
+        "branch": test_environment["GH_BRANCH"]
     }
 
 @pytest.fixture(scope="session")

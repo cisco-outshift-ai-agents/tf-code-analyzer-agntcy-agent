@@ -13,7 +13,7 @@ REQUIREMENTS := requirements.txt
 GREEN := \033[0;32m
 NC := \033[0m # No Color
 
-.PHONY: help venv install clean run test docker-up docker-down install-venv
+.PHONY: help venv install clean run test docker-up docker-down install-dev
 
 help: ## Display this help message
 	@echo "Available commands:"
@@ -24,13 +24,19 @@ install: ## Install dependencies
 	@$(PIP) install -r $(REQUIREMENTS)
 	@echo "Dependencies installed successfully"
 
+install-dev: ## Install package in development mode with test dependencies
+	@echo "Installing package in development mode..."
+	@$(PIP) install pytest-timeout
+	@$(PIP) install -e ".[test]"
+	@echo "Development installation complete"
+
 run: ## Run the application
 	@echo "Starting TF Code Analyzer Agent..."
 	@$(PYTHON) app/main.py
 
-test: ## Run tests
+test: install-dev ## Run tests
 	@echo "Running tests..."
-	@pytest tests/ -v
+	@PYTHONPATH=$(PWD) pytest tests/ -v --timeout=60
 
 docker-up: ## Start services with docker-compose
 	@echo "Starting services with docker-compose..."

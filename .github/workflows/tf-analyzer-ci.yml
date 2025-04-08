@@ -9,53 +9,67 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     env:
-      TF_CODE_ANALYZER_HOST: "127.0.0.1"
-      TF_CODE_ANALYZER_PORT: "8133"
-      GITHUB_TOKEN: ${{ github.token }}
-      GITHUB_REPO_URL: ${{ secrets.GITHUB_REPO_URL }}
-      GITHUB_BRANCH: ${{ secrets.GITHUB_BRANCH }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO_URL: ${{ secrets.GH_REPO_URL }}
+      GH_BRANCH: ${{ secrets.GH_BRANCH }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      TF_CODE_ANALYZER_HOST: "0.0.0.0"
+      AGP_GATEWAY_ENDPOINT: "http://0.0.0.0:46357"
       PYTHONPATH: ${{ github.workspace }}
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-dev libyaml-dev make curl
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-dev libyaml-dev make curl build-essential gnupg software-properties-common unzip net-tools
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.cargo/bin:$PATH"
 
-    - name: Install Docker Compose
-      run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        docker-compose --version
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip wheel setuptools
-        pip install --only-binary :all: PyYAML
-        # Install the package in editable mode with test dependencies
-        pip install -e ".[test]"
-        # Verify installation
-        python -c "import client; import app; print('Modules found successfully!')"
+      - name: Install Docker Compose
+        run: |
+          curl -L "https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-$(uname -s)-$(uname -m)" -o docker-compose
+          chmod +x docker-compose
+          sudo mv docker-compose /usr/local/bin/
+          docker-compose --version
 
-    - name: Build and start services
-      run: |
-        docker-compose up -d
-        sleep 10  # Wait for services to be ready
-        docker ps
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+          pip install langchain_openai
 
-    - name: Run All Tests
-      run: |
-        # Set PYTHONPATH explicitly for the test run
-        PYTHONPATH=$PYTHONPATH pytest tests/ -v
+      - name: Start Services with Docker Compose
+        run: |
+          make docker-up
 
-    - name: Cleanup
-      if: always()
-      run: docker-compose down
+      - name: Wait for "AGP Server started" in Docker Logs
+        run: |
+          echo "Waiting for AGP Server to start..."
+          timeout 60 bash -c "
+            until docker compose logs | grep 'AGP Server started'; do
+              sleep 2
+            done
+          "
+
+      - name: Run Tests
+        run: |
+          PYTHONPATH=$PYTHONPATH make test
+
+      - name: Tear Down Docker Compose
+        if: always()
+        run: make docker-down

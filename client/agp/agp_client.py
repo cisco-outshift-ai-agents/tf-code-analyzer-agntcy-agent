@@ -53,9 +53,9 @@ def fetch_github_environment_variables() -> Dict[str, str | None]:
         Dict[str, str]: A dictionary containing the GitHub environment variables.
     """
     github = {
-        "repo_url": os.getenv("GITHUB_REPO_URL"),
-        "github_token": os.getenv("GITHUB_TOKEN"),
-        "branch": os.getenv("GITHUB_BRANCH"),
+        "repo_url": os.getenv("GH_REPO_URL"),
+        "github_token": os.getenv("GH_TOKEN"),
+        "branch": os.getenv("GH_BRANCH"),
     }
     return github
 
@@ -81,17 +81,18 @@ async def send_and_recv(payload: Dict[str, Any], remote_agent: str) -> Dict[str,
         The response is expected to be a JSON string that can be decoded into a dictionary
         containing either an 'error' field (for failures) or an 'output' field with 'messages'
     """
+    try:
+        await Config.gateway_container.publish_messsage(
+            payload, agent_container=Config.agent_container, remote_agent=remote_agent
+        )
 
-    await Config.gateway_container.publish_messsage(
-        payload, agent_container=Config.agent_container, remote_agent=remote_agent
-    )
-    _, recv = await Config.gateway_container.gateway.receive()
+        _, recv = await Config.gateway_container.gateway.receive()
 
-    response_data = json.loads(recv.decode("utf8"))
-
-    logger.info(f"Received response from remote agent: {response_data}")
-
-    return response_data
+        response_data = json.loads(recv.decode("utf8"))
+        return response_data
+    except Exception as e:
+        logger.error(f"[send_and_recv] Error occurred: {str(e)}", exc_info=True)
+        raise
 
 async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
     """
@@ -105,7 +106,7 @@ async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
     """
     if "github_details" not in state or not state["github_details"]:
         error_msg = "GraphState is missing 'github_details' key"
-        logger.error(json.dumps({"error": error_msg}))
+        logger.error(f"[node_remote_agp] {error_msg}")
         return {"error": error_msg}
 
     payload: Dict[str,Any] = {
@@ -113,12 +114,17 @@ async def node_remote_agp(state: GraphState) -> Dict[str, Any]:
         "input": {"github_details": state["github_details"], "messages": [{"content": "is_present"}]},
         "route": "/api/v1/runs"
     }
-
-    res = await send_and_recv(payload, remote_agent=Config.remote_agent)
-    if "output" in res:
-        if "static_analyzer_output" in res["output"]:
-            return res["output"]
-    return res
+    
+    try:
+        res = await send_and_recv(payload, remote_agent=Config.remote_agent)
+        
+        if "output" in res:
+            if "static_analyzer_output" in res["output"]:
+                return res["output"]
+        return res
+    except Exception as e:
+        logger.error(f"[node_remote_agp] Error occurred: {str(e)}", exc_info=True)
+        raise
 
 async def init_client_gateway_conn(remote_agent: str = "server"):
     """Initialize connection to the gateway.
@@ -136,46 +142,61 @@ async def init_client_gateway_conn(remote_agent: str = "server"):
     """
 
     endpoint = os.getenv("AGP_GATEWAY_ENDPOINT", "http://127.0.0.1:46357")
+    
     Config.gateway_container.set_config(
         endpoint=endpoint, insecure=True
     )
 
-    # Call connect_with_retry
-    _ = await Config.gateway_container.connect_with_retry(
-        agent_container=Config.agent_container,
-        max_duration=10,
-        initial_delay=1,
-        remote_agent=remote_agent,
-    )
+    try:
+        logger.info("[init_client_gateway_conn] Attempting to connect...")
+        result = await Config.gateway_container.connect_with_retry(
+            agent_container=Config.agent_container,
+            max_duration=10,
+            initial_delay=1,
+            remote_agent=remote_agent,
+        )
+        logger.info(f"[init_client_gateway_conn] Connection successful")
+        return result
+    except Exception as e:
+        logger.error(f"[init_client_gateway_conn] Connection failed: {str(e)}", exc_info=True)
+        raise
 
 async def build_graph() -> Any:
     """
     Constructs the state graph for handling requests.
 
     Returns:
-        StateGraph: A compiled LangGraph state graph.å
+        StateGraph: A compiled LangGraph state graph.
     """
-    await init_client_gateway_conn()
-    builder = StateGraph(GraphState)
-    builder.add_node("node_remote_agp", node_remote_agp)
-    builder.add_edge(START, "node_remote_agp")
-    builder.add_edge("node_remote_agp", END)
-    return builder.compile()
+    try:
+        await init_client_gateway_conn()
+        
+        builder = StateGraph(GraphState)
+        builder.add_node("node_remote_agp", node_remote_agp)
+        builder.add_edge(START, "node_remote_agp")
+        builder.add_edge("node_remote_agp", END)
+        return builder.compile()
+    except Exception as e:
+        logger.error(f"[build_graph] Error occurred: {str(e)}", exc_info=True)
+        raise
 
 async def main():
     """
     Main function to load environment variables, initialize the gateway connection,
     build the state graph, and invoke it with sample inputs.
     """
-    load_dotenv(override=True)
-    graph = await build_graph()
-    
-    github_details = fetch_github_environment_variables()
-    input = {"github_details": github_details}
-    logger.info({"event": "invoking_graph", "input": input})
-    
-    result = await graph.ainvoke(input)
-    logger.info({"event": "final_result", "result": result})
-    
+    try:
+        load_dotenv(override=True)
+        
+        graph = await build_graph()
+        
+        github_details = fetch_github_environment_variables()
+        
+        input = {"github_details": github_details}        
+        result = await graph.ainvoke(input)
+    except Exception as e:
+        logger.error(f"[main] Error occurred: {str(e)}", exc_info=True)
+        raise
+
 if __name__ == "__main__":
     asyncio.run(main())

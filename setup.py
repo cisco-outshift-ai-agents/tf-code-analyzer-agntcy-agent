@@ -5,7 +5,7 @@ setup(
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
-        "agp-api>=0.0.6",  # Latest version from piwheels
+        "agp-api==0.0.5",  # Latest version from piwheels
         "requests",
         "aiohttp",
         "pytest",
