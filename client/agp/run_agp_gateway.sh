@@ -1,8 +1,13 @@
+#!/bin/bash
+
 # Set the environment variable for the password
 PASSWORD="dummy_password"
 
-# Resolve config path
-CONFIG_PATH=$(realpath .server-config.yaml)
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Resolve config path relative to the script directory
+CONFIG_PATH="$SCRIPT_DIR/server-config.yaml"
 
 # Run Docker command
 docker run -it \
