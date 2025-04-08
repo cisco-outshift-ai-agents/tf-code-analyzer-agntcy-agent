@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   agp-gateway:
     image: ghcr.io/agntcy/agp/gw:0.3.6
