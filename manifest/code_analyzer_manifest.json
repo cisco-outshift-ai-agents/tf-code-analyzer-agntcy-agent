@@ -1,0 +1,252 @@
+{
+  "metadata": {
+    "ref": {
+      "name": "org.agntcy.analyzer",
+      "version": "0.0.1"
+    },
+    "description": "TThe Terraform Static Analyzer AI Agent  performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns."
+  },
+  "specs": {
+    "capabilities": {},
+    "input": {
+      "$defs": {
+        "GithubRequest": {
+          "properties": {
+            "repo_url": {
+              "description": "GitHub repository URL",
+              "title": "Repo Url",
+              "type": "string"
+            },
+            "branch": {
+              "description": "Branch name to download",
+              "minLength": 1,
+              "title": "Branch",
+              "type": "string"
+            },
+            "github_token": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "GitHub Personal Access Token (optional)",
+              "title": "Github Token"
+            }
+          },
+          "required": [
+            "repo_url",
+            "branch"
+          ],
+          "title": "GithubRequest",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "agent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "123456",
+          "description": "The agent ID to run. If not provided will use the default agent for this service.",
+          "title": "Agent Id"
+        },
+        "input": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/GithubRequest"
+              },
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "default": null,
+          "description": "The input to the graph, expecting a dictionary with a 'github' key.",
+          "title": "Input",
+          "type": "object"
+        },
+        "route": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The route to send the request to.",
+          "title": "Route"
+        }
+      },
+      "title": "RunCreateStateless",
+      "type": "object"
+    },
+    "output": {
+      "properties": {
+        "agent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The agent ID that was run. If not provided will use the default agent for this service.",
+          "title": "Agent Id"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Output"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Metadata associated with the run.",
+          "title": "Metadata"
+        }
+      },
+      "required": [
+        "agent_id",
+        "metadata"
+      ],
+      "title": "RunCreateStatelessOutput",
+      "type": "object"
+    },
+    "config": {
+      "properties": {
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "recursion_limit": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recursion Limit"
+        },
+        "configurable": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Configurable"
+        }
+      },
+      "title": "Config",
+      "type": "object"
+    }
+  },
+  "deployment": {
+    "deployment_options": [
+      {
+        "type": "source_code",
+        "name": "src",
+        "url": "https://github.com/cisco-outshift-ai-agents/tf-code-analyzer-agntcy-agent",
+        "framework_config": {
+          "framework_type": "langgraph",
+          "graph": "client.agp.agp_client:build_graph"
+        }
+      }
+    ],
+    "env_vars": [
+      {
+        "desc": "Open AI API Key",
+        "name": "OPENAI_API_KEY"
+      },
+      {
+        "desc": "Open AI Model Name",
+        "name": "OPENAI_MODEL_NAME"
+      },
+      {
+        "desc": "Open AI Temperature",
+        "name": "OPENAI_TEMPERATURE"
+      },
+      {
+        "desc": "AZURE Open AI API Key",
+        "name": "AZURE_OPENAI_API_KEY"
+      },
+      {
+        "desc": "AZURE Open AI Endpoint",
+        "name": "AZURE_OPENAI_ENDPOINT"
+      },
+      {
+        "desc": "AZURE Open AI Deployment Name",
+        "name": "AZURE_OPENAI_DEPLOYMENT_NAME"
+      },
+      {
+        "desc": "AZURE Open AI API Version",
+        "name": "AZURE_OPENAI_API_VERSION"
+      },
+      {
+        "desc": "AGP Gateway Endpoint",
+        "name": "AGP_GATEWAY_ENDPOINT"
+      }
+    ],
+    "dependencies": []
+  }
+}
