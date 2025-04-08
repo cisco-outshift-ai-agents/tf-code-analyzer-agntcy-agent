@@ -1,15 +1,11 @@
 import os
 import pytest
 from typing import Dict, Any
-import json
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from fastapi.testclient import TestClient
+from fastapi import HTTPException
 from app.main import create_app
 from app.core.config import APISettings, AppSettings
-from app.core.github import GithubClient
-from app.graph.graph import StaticAnalyzerWorkflow
-from github import Github
-from fastapi import HTTPException
 from http import HTTPStatus
 
 # Configure test environment

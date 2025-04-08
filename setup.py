@@ -21,6 +21,7 @@ setup(
             "pytest-mock>=3.12.0",
             "requests>=2.31.0",
             "aiohttp>=3.9.3",
+            "pytest-timeout>=2.2.0",
         ],
         "agp": [
             "agp-api",  # Optional AGP API dependency

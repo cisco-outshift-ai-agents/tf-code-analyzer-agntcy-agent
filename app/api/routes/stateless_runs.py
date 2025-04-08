@@ -20,7 +20,6 @@ import logging
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse
 from starlette.responses import JSONResponse
 
 from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain

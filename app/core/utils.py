@@ -19,8 +19,7 @@ import shutil
 import os
 import zipfile
 from pathlib import Path
-
-from dotenv import find_dotenv, load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 
 def extract_zipfile(zip_path: str, extract_path: str):

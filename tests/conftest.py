@@ -1,6 +1,6 @@
 import os
 import pytest
-from typing import Dict, Any
+from typing import Dict
 
 from dotenv import load_dotenv
 

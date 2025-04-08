@@ -15,7 +15,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.runnables import RunnableSerializable

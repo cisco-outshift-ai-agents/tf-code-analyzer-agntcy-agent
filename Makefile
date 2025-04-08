@@ -25,7 +25,7 @@ install: ## Install dependencies
 	@$(PIP) install -r $(REQUIREMENTS)
 	@echo "Dependencies installed successfully"
 
-install-dev: ## Install package in development mode with test dependencies
+install-pkg-venv: ## Install package dependencies
 	@if [ -n "$$VIRTUAL_ENV" ]; then \
 		echo "Using already activated virtual environment: $$VIRTUAL_ENV"; \
 		pip install -e ".[test]"; \
@@ -40,6 +40,8 @@ install-dev: ## Install package in development mode with test dependencies
 		python -m venv $(VENV); \
 		. $(VENV)/bin/activate && pip install -e ".[test]"; \
 	fi
+
+install-dev: install-pkg-venv ## Install package in development mode with test dependencies
 	@echo "Development installation complete! If not already activated, activate your virtual environment with:"
 	@echo "On Unix/Linux/Mac: source $(VENV)/bin/activate"
 	@echo 'On Windows: $(VENV)\Scripts\activate'
@@ -48,9 +50,9 @@ run: ## Run the application
 	@echo "Starting TF Code Analyzer Agent..."
 	@$(PYTHON) app/main.py
 
-test: install-dev ## Run tests
+test: install-pkg-venv ## Run tests
 	@echo "Running tests..."
-	@PYTHONPATH=$(PWD) pytest tests/ -v --timeout=120
+	@PYTHONPATH=$(PWD) pytest tests/ -v
 
 docker-up: ## Start services with docker-compose
 	@echo "Starting services with docker-compose..."
