@@ -14,7 +14,7 @@ REQUIREMENTS := requirements.txt
 GREEN := \033[0;32m
 NC := \033[0m # No Color
 
-.PHONY: help venv install clean run test docker-up docker-down install-dev clean install-test
+.PHONY: help venv install clean run test docker-up docker-down clean install-test
 
 help: ## Display this help message
 	@echo "Available commands:"
@@ -22,29 +22,9 @@ help: ## Display this help message
 
 install: ## Install dependencies
 	@echo "Installing dependencies..."
-	@$(PIP) install -r $(REQUIREMENTS)
+	@$(PYTHON) -m pip install --upgrade pip setuptools wheel
+	@$(PYTHON) -m pip install -r $(REQUIREMENTS)
 	@echo "Dependencies installed successfully"
-
-install-pkg-venv: ## Install package dependencies
-	@if [ -n "$$VIRTUAL_ENV" ]; then \
-		echo "Using already activated virtual environment: $$VIRTUAL_ENV"; \
-		$(PIP) install -r $(REQUIREMENTS)"; \
-	elif [ -d "$(VENV_DOT)" ]; then \
-		echo "Using existing .venv directory..."; \
-		. $(VENV_DOT)/bin/activate && $(PIP) install -r $(REQUIREMENTS); \
-	elif [ -d "$(VENV)" ]; then \
-		echo "Using existing venv directory..."; \
-		. $(VENV)/bin/activate &&  $(PIP) install -r $(REQUIREMENTS); \
-	else \
-		echo "Creating virtual environment..."; \
-		python -m venv $(VENV); \
-		. $(VENV)/bin/activate && $(PIP) install -r $(REQUIREMENTS); \
-	fi
-
-install-dev: install-pkg-venv ## Install package in development mode with test dependencies
-	@echo "Development installation complete! If not already activated, activate your virtual environment with:"
-	@echo "On Unix/Linux/Mac: source $(VENV)/bin/activate"
-	@echo 'On Windows: $(VENV)\Scripts\activate'
 
 install-test: ## Install test dependencies
 	@echo "Installing test dependencies..."
@@ -72,7 +52,15 @@ clean: ## Clean up development environment
 	rm -rf $(VENV)
 	rm -rf $(VENV_DOT)
 	rm -rf *.egg-info
+	rm -rf .pytest_cache
+	rm -rf .ruff_cache
+	rm -rf .coverage
+	rm -rf htmlcov
 	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name "*.pyd" -delete
+	find . -type f -name ".coverage" -delete
 
 # Default target
 .DEFAULT_GOAL := help
