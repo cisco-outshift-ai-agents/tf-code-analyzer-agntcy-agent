@@ -1,10 +1,10 @@
 {
   "metadata": {
     "ref": {
-      "name": "org.agntcy.analyzer",
+      "name": "org.agntcy.tf-code-analyzer",
       "version": "0.0.1"
     },
-    "description": "TThe Terraform Static Analyzer AI Agent  performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns."
+    "description": "The Terraform Static Analyzer AI Agent  performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns."
   },
   "specs": {
     "capabilities": {},
