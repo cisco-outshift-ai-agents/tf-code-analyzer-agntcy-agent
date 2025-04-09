@@ -37,8 +37,8 @@ from app.models.models import RunCreateStateless, RunCreateStatelessOutput, Conf
 
 manifest = AgentManifest(
     metadata=AgentMetadata(
-        ref=AgentRef(name="org.agntcy.analyzer", version="0.0.1", url=None),
-        description="TThe Terraform Static Analyzer AI Agent  performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns."),
+        ref=AgentRef(name="org.agntcy.tf-code-analyzer", version="0.0.1", url=None),
+        description="The Terraform Static Analyzer AI Agent  performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns."),
     specs=AgentACPSpec(
         input=RunCreateStateless.model_json_schema(),
         output=RunCreateStatelessOutput.model_json_schema(),
