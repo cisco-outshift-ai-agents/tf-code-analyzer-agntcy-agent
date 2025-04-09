@@ -14,7 +14,7 @@ REQUIREMENTS := requirements.txt
 GREEN := \033[0;32m
 NC := \033[0m # No Color
 
-.PHONY: help venv install clean run test docker-up docker-down install-dev clean 
+.PHONY: help venv install clean run test docker-up docker-down install-dev clean install-test
 
 help: ## Display this help message
 	@echo "Available commands:"
@@ -28,17 +28,17 @@ install: ## Install dependencies
 install-pkg-venv: ## Install package dependencies
 	@if [ -n "$$VIRTUAL_ENV" ]; then \
 		echo "Using already activated virtual environment: $$VIRTUAL_ENV"; \
-		pip install -e ".[test]"; \
+		$(PIP) install -r $(REQUIREMENTS)"; \
 	elif [ -d "$(VENV_DOT)" ]; then \
 		echo "Using existing .venv directory..."; \
-		. $(VENV_DOT)/bin/activate && pip install -e ".[test]"; \
+		. $(VENV_DOT)/bin/activate && $(PIP) install -r $(REQUIREMENTS); \
 	elif [ -d "$(VENV)" ]; then \
 		echo "Using existing venv directory..."; \
-		. $(VENV)/bin/activate && pip install -e ".[test]"; \
+		. $(VENV)/bin/activate &&  $(PIP) install -r $(REQUIREMENTS); \
 	else \
 		echo "Creating virtual environment..."; \
 		python -m venv $(VENV); \
-		. $(VENV)/bin/activate && pip install -e ".[test]"; \
+		. $(VENV)/bin/activate && $(PIP) install -r $(REQUIREMENTS); \
 	fi
 
 install-dev: install-pkg-venv ## Install package in development mode with test dependencies
@@ -46,11 +46,16 @@ install-dev: install-pkg-venv ## Install package in development mode with test d
 	@echo "On Unix/Linux/Mac: source $(VENV)/bin/activate"
 	@echo 'On Windows: $(VENV)\Scripts\activate'
 
+install-test: ## Install test dependencies
+	@echo "Installing test dependencies..."
+	@$(PIP) install -e ".[test]"
+	@echo "Test dependencies installed successfully"
+
 run: ## Run the application
 	@echo "Starting TF Code Analyzer Agent..."
 	@$(PYTHON) app/main.py
 
-test: install-pkg-venv ## Run tests
+test: install-test ## Run tests
 	@echo "Running tests..."
 	@PYTHONPATH=$(PWD) pytest tests/ -v
 
