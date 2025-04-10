@@ -66,9 +66,9 @@ def fetch_github_environment_variables() -> Dict[str, str | None]:
         Dict[str, str]: A dictionary containing the GitHub environment variables.
     """
     github_details = {
-        "repo_url": os.getenv("GITHUB_REPO_URL"),
-        "github_token": os.getenv("GITHUB_TOKEN"),
-        "branch": os.getenv("GITHUB_BRANCH"),
+        "repo_url": os.getenv("GH_REPO_URL"),
+        "github_token": os.getenv("GH_TOKEN"),
+        "branch": os.getenv("GH_BRANCH"),
     }
     return github_details
 

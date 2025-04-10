@@ -1,0 +1,74 @@
+name: "Terraform Analyzer CI"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO_URL: ${{ secrets.GH_REPO_URL }}
+      GH_BRANCH: ${{ secrets.GH_BRANCH }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      TF_CODE_ANALYZER_HOST: "0.0.0.0"
+      AGP_GATEWAY_ENDPOINT: "http://0.0.0.0:46357"
+      PYTHONPATH: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-dev libyaml-dev make curl build-essential gnupg software-properties-common unzip net-tools
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.cargo/bin:$PATH"
+
+
+      - name: Install Docker Compose
+        run: |
+          curl -L "https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-$(uname -s)-$(uname -m)" -o docker-compose
+          chmod +x docker-compose
+          sudo mv docker-compose /usr/local/bin/
+
+      - name: Install Python Dependencies
+        run: |
+          make install
+
+      - name: Start Services with Docker Compose
+        run: |
+          make docker-up
+
+      - name: Wait for the TF Code Analyzer Agent to Connect to the AGP Gateway
+        run: |
+          if ! timeout 120 bash -c "
+            until docker compose logs | grep 'AGP Server started'; do
+              sleep 2
+            done
+          "; then
+            echo 'AGP Server did not start. Here are the Docker logs:'
+            docker compose logs
+          fi
+
+      - name: Run Tests
+        run: |
+          PYTHONPATH=$PYTHONPATH make test
+
+      - name: Tear Down Docker Compose
+        if: always()
+        run: make docker-down

@@ -1,0 +1,39 @@
+services:
+  agp-gateway:
+    image: ghcr.io/agntcy/agp/gw:0.3.6
+    ports:
+      - "46357:46357"
+    environment:
+      - PASSWORD=${AGP_GATEWAY_PASSWORD:-dummy_password}
+      - CONFIG_PATH=/config.yaml
+    volumes:
+      - ./client/agp/server-config.yaml:/config.yaml
+    command: ["/gateway", "--config", "/config.yaml"]
+    networks:
+      - agp-network
+
+  tf-code-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8133:8133"
+    environment:
+      - TF_CODE_ANALYZER_HOST=0.0.0.0
+      - TF_CODE_ANALYZER_PORT=8133
+      - AGP_GATEWAY_ENDPOINT=http://agp-gateway:46357
+      # Azure OpenAI Configuration
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+    command: >
+      sh -c "sleep 10 && python -m app.main"
+    depends_on:
+      - agp-gateway
+    networks:
+      - agp-network
+
+networks:
+  agp-network:
+    driver: bridge 

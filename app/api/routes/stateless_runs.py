@@ -20,13 +20,12 @@ import logging
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse
 from starlette.responses import JSONResponse
 
-from core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
-from core.github import GithubClient
-from graph.graph import StaticAnalyzerWorkflow
-from models.models import (
+from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
+from app.core.github import GithubClient
+from app.graph.graph import StaticAnalyzerWorkflow
+from app.models.models import (
     Any,
     ErrorResponse,
     RunCreateStateless,

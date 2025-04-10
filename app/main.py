@@ -24,13 +24,13 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-
-from agp.agp import AGPConfig
-from api.routes import stateless_runs
-from core.config import APISettings, load_and_validate_app_settings
-from core.logging_config import configure_logging
-from core.utils import load_environment_variables, check_required_binaries
 from starlette.requests import Request
+
+from app.agp.agp import AGPConfig
+from app.api.routes import stateless_runs
+from app.core.config import APISettings, load_and_validate_app_settings
+from app.core.logging_config import configure_logging
+from app.core.utils import load_environment_variables, check_required_binaries
 
 logger = configure_logging()  # Apply global logging settings
 
@@ -190,7 +190,10 @@ async def agp_connect(app: FastAPI, settings: APISettings):
         AGPConfig.gateway_container.set_fastapi_app(app)
 
         _ = await AGPConfig.gateway_container.connect_with_retry(
-            agent_container=AGPConfig.agent_container, max_duration=10, initial_delay=1
+            agent_container=AGPConfig.agent_container,
+            max_duration=10,
+            initial_delay=1,
+            remote_agent="server"  # Connect to the server agent
         )
 
         await AGPConfig.gateway_container.start_server(

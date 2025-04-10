@@ -14,10 +14,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from langchain_core.runnables import RunnableSerializable
-from langgraph.graph import END, Graph
+import logging
+from typing import Any, Dict, List, Union
 
-from graph.static_analyzer import StaticAnalyzer
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.runnables import RunnableSerializable
+from langgraph.graph import END, Graph, MessageGraph
+
+from app.graph.static_analyzer import StaticAnalyzer
 
 
 class StaticAnalyzerWorkflow:
