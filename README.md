@@ -222,9 +222,7 @@ Make sure to run the client in a separate terminal as the service.
 ```bash
 python client/agp/agp_client.py
 ```
-
 ---
-
 ## Development Guide
 
 ### Project Structure
