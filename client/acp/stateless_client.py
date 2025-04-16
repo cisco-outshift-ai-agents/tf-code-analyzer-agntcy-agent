@@ -37,7 +37,7 @@ from langgraph.graph import END, START, StateGraph
 from dotenv import find_dotenv, load_dotenv
 from client.utils.logging import configure_logging
 
-logger = configure_logging(__file__.replace('.py', '.log'))
+logger = configure_logging(log_filename=__file__.replace('.py', '.log'))
 
 
 def fetch_github_environment_variables() -> Dict[str, str | None]:
@@ -50,7 +50,7 @@ def fetch_github_environment_variables() -> Dict[str, str | None]:
     github_details = {
         "repo_url": os.getenv("GITHUB_REPO_URL"),
         "github_token": os.getenv("GITHUB_TOKEN"),
-        "branch": os.getenv("GITHUB_BRANCH"),
+        "branch": os.getenv("GITHUB_BRANCH", "main"),
     }
     return github_details
 
