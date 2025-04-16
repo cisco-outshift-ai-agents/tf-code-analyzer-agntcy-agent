@@ -16,12 +16,18 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 from http import HTTPStatus
+from pdb import run
 
 from agntcy_acp.acp_v0.models.run_stateless import RunStateless as ACPRunStateless
 from agntcy_acp.acp_v0.models.run_status import RunStatus as ACPRunStatus
+from agntcy_acp.acp_v0.models.run_output import RunOutput as ACPRunOutput
+from agntcy_acp.acp_v0.models.run_result import RunResult as ACPRunResult
+from agntcy_acp.acp_v0.models.content import Content as ACPContent
+from agntcy_acp.acp_v0.models.message import Message as ACPMessage
 from agntcy_acp.models import RunCreateStateless as ACPRunCreateStateless
 from agntcy_acp.models import RunWaitResponseStateless as ACPRunWaitResponseStateless
 from fastapi import APIRouter, HTTPException, Request, status
@@ -214,6 +220,10 @@ def wait_run_stateless_runs_wait_post(
         # Run the static analyzer workflow on the downloaded repository.
         workflow = StaticAnalyzerWorkflow(chain=get_llm_chain(settings))
         result = workflow.analyze(file_path)
+        # Build Run Output
+        message = ACPMessage(role="ai", content=ACPContent(actual_instance=json.dumps(result)))
+        run_result = ACPRunResult(messages=[message], type="result")
+        run_output = ACPRunOutput(messages=run_result.messages, type=run_result.type)
         logger.info(result)
     except HTTPException as http_exc:
         logger.error(
@@ -235,6 +245,6 @@ def wait_run_stateless_runs_wait_post(
         status=ACPRunStatus.SUCCESS,
         creation=body,
     )
-    acp_response = ACPRunWaitResponseStateless(output=result, run=run_stateless)
+    acp_response = ACPRunWaitResponseStateless(output=run_output, run=run_stateless)
 
     return acp_response
