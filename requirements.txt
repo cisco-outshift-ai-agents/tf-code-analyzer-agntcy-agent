@@ -13,4 +13,5 @@ setuptools==74.1.2
 starlette==0.46.1
 uvicorn==0.34.0
 agntcy-acp==1.1.2
+python-json-logger==3.3.0
 
