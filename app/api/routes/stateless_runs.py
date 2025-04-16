@@ -233,4 +233,4 @@ def wait_run_stateless_runs_wait_post(
     )
     acp_response = ACPRunWaitResponseStateless(output=result, run=run_stateless)
 
-    return JSONResponse(content=acp_response, status_code=status.HTTP_200_OK)
+    return acp_response
