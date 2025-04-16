@@ -17,21 +17,23 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from starlette.responses import JSONResponse
+from agntcy_acp.acp_v0.models.run_stateless import \
+    RunStateless as ACPRunStateless
+from agntcy_acp.acp_v0.models.run_status import RunStatus as ACPRunStatus
+from agntcy_acp.models import RunCreateStateless as ACPRunCreateStateless
+from agntcy_acp.models import \
+    RunWaitResponseStateless as ACPRunWaitResponseStateless
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 
 from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
 from app.core.github import GithubClient
 from app.graph.graph import StaticAnalyzerWorkflow
-from app.models.models import (
-    Any,
-    ErrorResponse,
-    RunCreateStateless,
-    RunCreateStatelessOutput,
-    Union,
-)
+from app.models.models import (Any, ErrorResponse, RunCreateStateless,
+                               RunCreateStatelessOutput, Union)
 
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)
@@ -112,7 +114,7 @@ def run_stateless_runs_post(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=INTERNAL_ERROR_MESSAGE,
-        )
+        ) from exc
 
     payload = {
         "agent_id": body.agent_id,
