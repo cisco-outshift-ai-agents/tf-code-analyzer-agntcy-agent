@@ -22,7 +22,7 @@ service:
 probes:
   livenessProbeEnabled: false
   readinessProbeEnabled: false
-  port: 8133
+  port: 8132
   endpoint: /v1/health
 
 resources:
