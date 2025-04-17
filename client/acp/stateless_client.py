@@ -31,7 +31,7 @@ from typing import Any, Dict, TypedDict
 
 from agntcy_acp import ACPClient, ApiClientConfiguration
 from agntcy_acp.acp_v0.sync_client.api_client import ApiClient
-from agntcy_acp.models import RunCreateStateless, RunError, RunResult
+from agntcy_acp.acp_v0.models import RunCreateStateless, RunError, RunResult
 from langgraph.graph import END, START, StateGraph
 
 from dotenv import find_dotenv, load_dotenv

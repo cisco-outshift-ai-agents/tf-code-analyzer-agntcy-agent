@@ -20,7 +20,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from http import HTTPStatus
-from pdb import run
+from typing import Annotated
 
 from agntcy_acp.acp_v0.models.run_stateless import RunStateless as ACPRunStateless
 from agntcy_acp.acp_v0.models.run_status import RunStatus as ACPRunStatus
@@ -28,9 +28,11 @@ from agntcy_acp.acp_v0.models.run_output import RunOutput as ACPRunOutput
 from agntcy_acp.acp_v0.models.run_result import RunResult as ACPRunResult
 from agntcy_acp.acp_v0.models.content import Content as ACPContent
 from agntcy_acp.acp_v0.models.message import Message as ACPMessage
-from agntcy_acp.models import RunCreateStateless as ACPRunCreateStateless
-from agntcy_acp.models import RunWaitResponseStateless as ACPRunWaitResponseStateless
-from fastapi import APIRouter, HTTPException, Request, status
+from agntcy_acp.acp_v0.models import RunCreateStateless as ACPRunCreateStateless
+from agntcy_acp.acp_v0.models import (
+    RunWaitResponseStateless as ACPRunWaitResponseStateless,
+)
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
@@ -134,40 +136,22 @@ def run_stateless_runs_post(
     return JSONResponse(content=payload, status_code=status.HTTP_200_OK)
 
 
-@router.post(
-    "/runs/stream",
-    response_model=str,
-    responses={
-        "404": {"model": ErrorResponse},
-        "409": {"model": ErrorResponse},
-        "422": {"model": ErrorResponse},
-    },
-    include_in_schema=False,
-    tags=["Stateless Runs"],
-)
-def stream_run_stateless_runs_stream_post(
-    body: RunCreateStateless,
-) -> Union[str, ErrorResponse]:
-    """
-    Create Run, Stream Output
-    """
-    pass
-
-
 # ACP Endpoint
 @router.post(
     "/runs/wait",
-    response_model=ACPRunWaitResponseStateless,
     responses={
-        "409": {"model": ErrorResponse},
-        "422": {"model": ErrorResponse},
-        "500": {"model": ErrorResponse},
+        200: {"model": ACPRunWaitResponseStateless, "description": "Success"},
+        404: {"model": str, "description": "Not Found"},
+        409: {"model": str, "description": "Conflict"},
+        422: {"model": str, "description": "Validation Error"},
     },
     tags=["Stateless Runs"],
+    summary="Create a stateless run and wait for its output",
+    response_model_by_alias=True,
 )
-def wait_run_stateless_runs_wait_post(
+async def create_and_wait_for_stateless_run_output(
     body: ACPRunCreateStateless, request: Request
-) -> Union[ACPRunWaitResponseStateless, ErrorResponse]:
+) -> ACPRunWaitResponseStateless:
     """
     Create Run, Wait for Output
     """
@@ -221,9 +205,11 @@ def wait_run_stateless_runs_wait_post(
         workflow = StaticAnalyzerWorkflow(chain=get_llm_chain(settings))
         result = workflow.analyze(file_path)
         # Build Run Output
-        message = ACPMessage(role="ai", content=ACPContent(actual_instance=json.dumps(result)))
-        run_result = ACPRunResult(messages=[message], type="result")
-        run_output = ACPRunOutput(messages=run_result.messages, type=run_result.type)
+        message = ACPMessage(
+            role="ai", content=ACPContent(actual_instance=json.dumps(result))
+        )
+        # run_result = ACPRunResult(messages=[message], type="result")
+        # run_output = ACPRunOutput(actual_instance=run_result)
         logger.info(result)
     except HTTPException as http_exc:
         logger.error(
@@ -245,6 +231,9 @@ def wait_run_stateless_runs_wait_post(
         status=ACPRunStatus.SUCCESS,
         creation=body,
     )
-    acp_response = ACPRunWaitResponseStateless(output=run_output, run=run_stateless)
-
-    return acp_response
+    return ACPRunWaitResponseStateless(
+        run=run_stateless,
+        output=ACPRunOutput(
+            ACPRunResult(type="result", values=result, messages=[message])
+        ),
+    )
