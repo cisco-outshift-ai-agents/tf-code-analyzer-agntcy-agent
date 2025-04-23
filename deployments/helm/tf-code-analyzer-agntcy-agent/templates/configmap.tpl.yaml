@@ -8,3 +8,4 @@ data:
   AZURE_OPENAI_DEPLOYMENT_NAME: "{{ .Values.azureOpenAi.deploymentName }}"
   AZURE_OPENAI_API_VERSION: "{{ .Values.azureOpenAi.apiVersion }}"
   OPENAI_TEMPERATURE: "{{ .Values.openAi.temperature }}"
+  AGP_GATEWAY_ENDPOINT: "{{ .Values.agpGatewayEndpoint }}"
