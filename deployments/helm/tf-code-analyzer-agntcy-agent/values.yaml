@@ -25,6 +25,7 @@ probes:
   port: 8133
   endpoint: /v1/health
 
+agpGatewayEndpoint: ""
 
 azureOpenAi:
   endpoint: ""
