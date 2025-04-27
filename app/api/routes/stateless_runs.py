@@ -21,29 +21,25 @@ import logging
 from datetime import datetime, timezone
 from http import HTTPStatus
 
-from agntcy_acp.acp_v0.models.run_stateless import RunStateless as ACPRunStateless
-from agntcy_acp.acp_v0.models.run_status import RunStatus as ACPRunStatus
-from agntcy_acp.acp_v0.models.run_output import RunOutput as ACPRunOutput
-from agntcy_acp.acp_v0.models.run_result import RunResult as ACPRunResult
-from agntcy_acp.acp_v0.models.content import Content as ACPContent
-from agntcy_acp.acp_v0.models.message import Message as ACPMessage
-from agntcy_acp.acp_v0.models import RunCreateStateless as ACPRunCreateStateless
-from agntcy_acp.acp_v0.models import (
-    RunWaitResponseStateless as ACPRunWaitResponseStateless,
-)
+from agntcy_acp.acp_v0.models import \
+    RunCreateStateless as ACPRunCreateStateless
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
 from app.core.github import GithubClient
 from app.graph.graph import StaticAnalyzerWorkflow
-from app.models.ap.models import (
-    Any,
-    ErrorResponse,
-    RunCreateStateless,
-    RunCreateStatelessOutput,
-    Union,
-)
+from app.models.ap.models import (Any, ErrorResponse, RunCreateStateless,
+                                  RunCreateStatelessOutput, Union)
+from app.models.workflow_server.content import Content as SrvContent
+from app.models.workflow_server.message import Message as SrvMessage
+from app.models.workflow_server.run_output import RunOutput as SrvRunOutput
+from app.models.workflow_server.run_result import RunResult as SrvRunResult
+from app.models.workflow_server.run_stateless import \
+    RunStateless as SrvRunStateless
+from app.models.workflow_server.run_status import RunStatus as SrvRunStatus
+from app.models.workflow_server.run_wait_response_stateless import \
+    RunWaitResponseStateless as SrvRunWaitResponseStateless
 
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)
@@ -139,7 +135,7 @@ def run_stateless_runs_post(
 @router.post(
     "/runs/wait",
     responses={
-        200: {"model": ACPRunWaitResponseStateless, "description": "Success"},
+        200: {"model": SrvRunWaitResponseStateless, "description": "Success"},
         404: {"model": str, "description": "Not Found"},
         409: {"model": str, "description": "Conflict"},
         422: {"model": str, "description": "Validation Error"},
@@ -150,7 +146,7 @@ def run_stateless_runs_post(
 )
 async def create_and_wait_for_stateless_run_output(
     body: ACPRunCreateStateless, request: Request
-) -> ACPRunWaitResponseStateless:
+) -> SrvRunWaitResponseStateless:
     """
     Create Run, Wait for Output
     """
@@ -204,8 +200,8 @@ async def create_and_wait_for_stateless_run_output(
         workflow = StaticAnalyzerWorkflow(chain=get_llm_chain(settings))
         result = workflow.analyze(file_path)
         # Build Run Output
-        message = ACPMessage(
-            role="ai", content=ACPContent(actual_instance=json.dumps(result))
+        message = SrvMessage(
+            role="ai", content=SrvContent(actual_instance=json.dumps(result))
         )
         # run_result = ACPRunResult(messages=[message], type="result")
         # run_output = ACPRunOutput(actual_instance=run_result)
@@ -222,17 +218,17 @@ async def create_and_wait_for_stateless_run_output(
             detail=INTERNAL_ERROR_MESSAGE,
         ) from exc
     current_datetime = datetime.now(tz=timezone.utc)
-    run_stateless = ACPRunStateless(
+    run_stateless = SrvRunStateless(
         run_id=str(body.metadata.get("id", "")) if body.metadata else "",
         agent_id=body.agent_id or "",
         created_at=current_datetime,
         updated_at=current_datetime,
-        status=ACPRunStatus.SUCCESS,
+        status=SrvRunStatus.SUCCESS,
         creation=body,
     )
-    return ACPRunWaitResponseStateless(
+    return SrvRunWaitResponseStateless(
         run=run_stateless,
-        output=ACPRunOutput(
-            ACPRunResult(type="result", values=result, messages=[message])
+        output=SrvRunOutput(
+            SrvRunResult(type="result", values=result, messages=[message])
         ),
     )
