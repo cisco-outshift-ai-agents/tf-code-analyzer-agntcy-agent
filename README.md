@@ -1,10 +1,12 @@
 # Terraform Code Analyzer AI Agent
+
 [![Release](https://img.shields.io/github/v/release/cisco-ai-agents/tf-code-analyzer-agntcy-agent?display_name=tag)](CHANGELOG.md)
 [![Contributor-Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-fbab2c.svg)](CODE_OF_CONDUCT.md)
 
 Streamline execution of Terraform linters, with actionable AI insights as output.
 
 ## **Overview**
+
 The **Terraform Code Analyzer AI Agent** conforms to AGNTCY specs as described https://github.com/agntcy.
 
 This langchain agent runs `terraform validate` and `tflint` linters on a set of Terraform code inputs, and interprets the results using OpenAI. By leveraging OpenAI, the agent provides actionable insights and guidance on how to resolve issues identified by the linter.
@@ -15,6 +17,7 @@ The **Terraform Code Analyzer AI Agent** offers value to agentic application dev
 
 
 ## **📌 About the Project**
+
 This repository contains a **Terraform Code Analyzer AI Agent**. It performs static analysis on Terraform code to detect security risks, misconfigurations, and anti-patterns.
 
 There are two key analysis steps executed with this agent:
@@ -52,6 +55,7 @@ This agent was built with **FastAPI**, that can operate in two modes:
 ---
 
 ## **📋 Prerequisites**
+
 Before installation, ensure you have:
 - **Python 3.12+** installed
 - **Docker** and **Docker Compose** installed
@@ -162,6 +166,15 @@ make run
 ```
 ---
 
+### Models
+
+The Server uses the workflow server models at `agent_workflow_server/generated/models` to
+serve ACP endpoints.
+
+Notice that many models import other models from the same package, so moving or renaming any
+ path or file name will result on server not working. This hierarchy mimics the official
+ from workflow-srv repository.
+
 ### Expected Console Output
 
 On a successful run, you should see logs in your terminal similar to the snippet below. The exact timestamps, process IDs, and file paths will vary:
@@ -223,9 +236,25 @@ Make sure to run the client in a separate terminal as the service.
 python client/agp/agp_client.py
 ```
 ---
+
+### ACP REST Client
+
+*Change to `client/acp` folder*
+
+```bash
+python stateless_client.py
+```
+
+On a successful remote graph run you should see logs in your terminal similar to the snippet below:
+
+```bash
+{"asctime": "2025-04-27 23:14:38,238", "levelname": "ERROR", "pathname": "stateless_client.py", "module": "stateless_client", "funcName": "main", "message": "", "exc_info": null, "event": "final_result", "result": "- outputs.tf: Error: Duplicate output definition\n\n  An output named \"web_server_public_ip\" was already defined at main.tf:107,1-30. Output names must be unique within a module."}
+```
+
 ## Development Guide
 
 ### Project Structure
+
 ```
 tf-code-analyzer-agent/
 ├── app/                    # Main application code
@@ -275,6 +304,7 @@ The Dockerfile includes:
 ### Troubleshooting
 
 #### Import Errors
+
 If you encounter import errors like `ModuleNotFoundError: No module named 'app'`:
 
 1. Ensure you've installed the package in development mode:
@@ -302,6 +332,7 @@ If you encounter import errors like `ModuleNotFoundError: No module named 'app'`
 - **Customization**: You can change the log level (`info`, `debug`, etc.) or format by modifying environment variables or the logger configuration in your code. If you run in Docker or Kubernetes, ensure the logs are captured properly and aggregated where needed.
 
 ---
+
 ## API Endpoints
 
 By default, the API documentation is available at:
@@ -338,12 +369,14 @@ Upon successful execution, you should see:
 ![Langgraph Studio](./docs/imgs/studio.png "Studio")
 
 ---
+
 ## Roadmap
 
 See the [open issues](https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent/issues) for a list
 of proposed features (and known issues).
 
 ---
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to
@@ -352,12 +385,14 @@ appreciated**. For detailed contributing guidelines, please see
 [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
+
 ## License
 
 Distributed under the Apache-2.0 License. See [LICENSE](LICENSE) for more
 information.
 
 ---
+
 ## Contact
 
 [cisco-outshift-ai-agents@cisco.com](mailto:cisco-outshift-ai-agents@cisco.com)
@@ -366,6 +401,7 @@ Project Link:
 [https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent](https://github.com/cisco-ai-agents/tf-code-analyzer-agntcy-agent)
 
 ---
+
 ## Acknowledgements
 
 - [tflint](https://github.com/terraform-linters) for the linter.
