@@ -172,8 +172,8 @@ The Server uses the workflow server models at `agent_workflow_server/generated/m
 serve ACP endpoints.
 
 Notice that many models import other models from the same package, so moving or renaming any
- path or file name will result on server not working. This hierarchy mimics the official
- from workflow-srv repository.
+ path or file name will result on server not working. Do not change anything unless you know
+ what you are doing. This hierarchy mimics the official from workflow-srv repository.
 
 ### Expected Console Output
 
