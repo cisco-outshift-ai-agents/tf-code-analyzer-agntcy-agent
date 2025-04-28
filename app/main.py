@@ -34,6 +34,7 @@ from app.core.utils import load_environment_variables, check_required_binaries
 
 logger = configure_logging()  # Apply global logging settings
 
+
 class Log422Middleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
@@ -52,6 +53,7 @@ class Log422Middleware(BaseHTTPMiddleware):
             }
             logger.error(f"422 Validation Error: {log_data}")
         return response
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -174,9 +176,10 @@ def create_app(settings: APISettings) -> FastAPI:
         app.state.settings = load_and_validate_app_settings()
     except ValueError as e:
         logger.error(f"Startup failed: {e}")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
     return app
+
 
 async def agp_connect(app: FastAPI, settings: APISettings):
     """
@@ -193,7 +196,7 @@ async def agp_connect(app: FastAPI, settings: APISettings):
             agent_container=AGPConfig.agent_container,
             max_duration=10,
             initial_delay=1,
-            remote_agent="server"  # Connect to the server agent
+            remote_agent="server",  # Connect to the server agent
         )
 
         await AGPConfig.gateway_container.start_server(
@@ -206,14 +209,19 @@ async def agp_connect(app: FastAPI, settings: APISettings):
         logger.error("AGP client connection failed: %s. Continuing without AGP.", e)
 
 
-
 async def serve_rest(app: FastAPI, settings: APISettings):
     """
     Starts the Uvicorn server to serve the FastAPI application.
     """
-    config = uvicorn.Config(app, host=settings.TF_CODE_ANALYZER_HOST, port=settings.TF_CODE_ANALYZER_PORT, log_level="info")
+    config = uvicorn.Config(
+        app,
+        host=settings.TF_CODE_ANALYZER_HOST,
+        port=settings.TF_CODE_ANALYZER_PORT,
+        log_level="info",
+    )
     server = uvicorn.Server(config)
     await server.serve()
+
 
 async def main() -> None:
     """
@@ -238,10 +246,8 @@ async def main() -> None:
     app = create_app(settings)
 
     # Launch REST server and AGP client in parallel
-    await asyncio.gather(
-        serve_rest(app, settings),
-        agp_connect(app, settings)
-    )
+    await asyncio.gather(serve_rest(app, settings), agp_connect(app, settings))
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -26,20 +26,25 @@ from agntcy_acp.acp_v0.models import \
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from agent_workflow_server.generated.models.content import \
+    Content as SrvContent
+from agent_workflow_server.generated.models.message import \
+    Message as SrvMessage
+from agent_workflow_server.generated.models.run_output import \
+    RunOutput as SrvRunOutput
+from agent_workflow_server.generated.models.run_result import \
+    RunResult as SrvRunResult
+from agent_workflow_server.generated.models.run_stateless import \
+    RunStateless as SrvRunStateless
+from agent_workflow_server.generated.models.run_status import \
+    RunStatus as SrvRunStatus
+from agent_workflow_server.generated.models.run_wait_response_stateless import \
+    RunWaitResponseStateless as SrvRunWaitResponseStateless
 from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
 from app.core.github import GithubClient
 from app.graph.graph import StaticAnalyzerWorkflow
 from app.models.ap.models import (Any, ErrorResponse, RunCreateStateless,
                                   RunCreateStatelessOutput, Union)
-from app.models.workflow_server.content import Content as SrvContent
-from app.models.workflow_server.message import Message as SrvMessage
-from app.models.workflow_server.run_output import RunOutput as SrvRunOutput
-from app.models.workflow_server.run_result import RunResult as SrvRunResult
-from app.models.workflow_server.run_stateless import \
-    RunStateless as SrvRunStateless
-from app.models.workflow_server.run_status import RunStatus as SrvRunStatus
-from app.models.workflow_server.run_wait_response_stateless import \
-    RunWaitResponseStateless as SrvRunWaitResponseStateless
 
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)
@@ -199,12 +204,12 @@ async def create_and_wait_for_stateless_run_output(
         # Run the static analyzer workflow on the downloaded repository.
         workflow = StaticAnalyzerWorkflow(chain=get_llm_chain(settings))
         result = workflow.analyze(file_path)
-        # Build Run Output
+        # Build WrkFlow Srv Run Output
         message = SrvMessage(
             role="ai", content=SrvContent(actual_instance=json.dumps(result))
         )
-        # run_result = ACPRunResult(messages=[message], type="result")
-        # run_output = ACPRunOutput(actual_instance=run_result)
+        run_result = SrvRunResult(type="result", values=result, messages=[message])
+        run_output = SrvRunOutput(run_result)
         logger.info(result)
     except HTTPException as http_exc:
         logger.error(
@@ -228,7 +233,5 @@ async def create_and_wait_for_stateless_run_output(
     )
     return SrvRunWaitResponseStateless(
         run=run_stateless,
-        output=SrvRunOutput(
-            SrvRunResult(type="result", values=result, messages=[message])
-        ),
+        output=run_output
     )
