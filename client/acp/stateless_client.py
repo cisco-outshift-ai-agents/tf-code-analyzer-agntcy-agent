@@ -20,7 +20,9 @@ stateless_client.py
 This modules contains a sample graph client that makes a stateless
 ACP request to the Remote Graph Server.
 
-Usage: python tf_ca_clients/stateless_client.py
+Usage: python stateless_client.py
+
+The resource URL at /runs/wait will be invoked on the Remote Graph Server.
 """
 
 import json
@@ -37,7 +39,7 @@ from langgraph.graph import END, START, StateGraph
 from dotenv import find_dotenv, load_dotenv
 from client.utils.logging import configure_logging
 
-logger = configure_logging(log_filename=__file__.replace('.py', '.log'))
+logger = configure_logging(log_filename=__file__.replace(".py", ".log"))
 
 
 def fetch_github_environment_variables() -> Dict[str, str | None]:
@@ -96,7 +98,11 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
             actual_output = run_output.output.actual_instance
             if isinstance(actual_output, RunResult):
                 run_result: RunResult = actual_output
-                sao = run_result.values.get("static_analyzer_output", "") if run_result.values else ""
+                sao = (
+                    run_result.values.get("static_analyzer_output", "")
+                    if run_result.values
+                    else ""
+                )
             elif isinstance(actual_output, RunError):
                 run_error: RunError = actual_output
                 raise Warning(f"Run Failed: {run_error}")
@@ -152,7 +158,12 @@ def main():
 
     result = graph.invoke(graph_input)
 
-    logger.error({"event": "final_result", "result": result.get("static_analyzer_output", result)})
+    logger.error(
+        {
+            "event": "final_result",
+            "result": result.get("static_analyzer_output", result),
+        }
+    )
 
 
 if __name__ == "__main__":
