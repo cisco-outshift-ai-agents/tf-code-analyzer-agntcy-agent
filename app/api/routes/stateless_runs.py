@@ -21,8 +21,6 @@ import logging
 from datetime import datetime, timezone
 from http import HTTPStatus
 
-from agntcy_acp.acp_v0.models import \
-    RunCreateStateless as ACPRunCreateStateless
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 

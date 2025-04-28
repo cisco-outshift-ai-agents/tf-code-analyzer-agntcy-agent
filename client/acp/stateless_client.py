@@ -96,6 +96,7 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
             actual_output = run_output.output.actual_instance
             if isinstance(actual_output, RunResult):
                 run_result: RunResult = actual_output
+                sao = run_result.values.get("static_analyzer_output", "") if run_result.values else ""
             elif isinstance(actual_output, RunError):
                 run_error: RunError = actual_output
                 raise Warning(f"Run Failed: {run_error}")
@@ -103,7 +104,7 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
                 raise ValueError(
                     f"ACP Server returned a unsupported response: {run_output}"
                 )
-            return {"static_analyzer_output": ""}
+            return {"static_analyzer_output": sao}
 
         except Exception as e:
             error_msg = "Unexpected failure"
@@ -117,35 +118,6 @@ def node_remote_request_stateless(state: Dict[str, Any]) -> Dict[str, Any]:
                 )
             )
             return {"error": error_msg}
-
-
-def decode_response(response_data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Decodes the JSON response from the remote server and extracts relevant information.
-
-    Args:
-        response_data (Dict[str, Any]): The JSON response from the server.
-
-    Returns:
-        Dict[str, Any]: A structured dictionary containing extracted response fields.
-    """
-    try:
-        agent_id = response_data.get("agent_id", "Unknown")
-        output = response_data.get("output", {})
-        model = response_data.get("model", "Unknown")
-        metadata = response_data.get("metadata", {})
-
-        # Extract messages if present
-        static_analyzer_output = output.get("static_analyzer_output", [])
-
-        return {
-            "agent_id": agent_id,
-            "static_analyzer_output": static_analyzer_output,
-            "model": model,
-            "metadata": metadata,
-        }
-    except Exception as e:
-        return {"error": f"Failed to decode response: {str(e)}"}
 
 
 def build_graph() -> Any:
@@ -180,10 +152,7 @@ def main():
 
     result = graph.invoke(graph_input)
 
-    if "output" in result:
-        logger.info({"event": "final_result", "result": result["output"]})
-    else:
-        logger.error({"event": "final_result", "result": result})
+    logger.error({"event": "final_result", "result": result.get("static_analyzer_output", result)})
 
 
 if __name__ == "__main__":
