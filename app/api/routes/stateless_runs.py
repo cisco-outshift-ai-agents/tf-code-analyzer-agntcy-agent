@@ -38,6 +38,8 @@ from agent_workflow_server.generated.models.run_stateless import \
     RunStateless as SrvRunStateless
 from agent_workflow_server.generated.models.run_status import \
     RunStatus as SrvRunStatus
+from agent_workflow_server.generated.models.run_create_stateless import \
+    RunCreateStateless as SrvRunCreateStateless
 from agent_workflow_server.generated.models.run_wait_response_stateless import \
     RunWaitResponseStateless as SrvRunWaitResponseStateless
 from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
@@ -150,7 +152,7 @@ def run_stateless_runs_post(
     response_model_by_alias=True,
 )
 async def create_and_wait_for_stateless_run_output(
-    body: ACPRunCreateStateless, request: Request
+    body: SrvRunCreateStateless, request: Request
 ) -> SrvRunWaitResponseStateless:
     """
     Create Run, Wait for Output
@@ -206,7 +208,7 @@ async def create_and_wait_for_stateless_run_output(
         result = workflow.analyze(file_path)
         # Build WrkFlow Srv Run Output
         message = SrvMessage(
-            role="ai", content=SrvContent(actual_instance=json.dumps(result))
+            role="ai", content=SrvContent(json.dumps(result))
         )
         run_result = SrvRunResult(type="result", values=result, messages=[message])
         run_output = SrvRunOutput(run_result)
