@@ -85,8 +85,9 @@ def load_environment_variables(env_file: str | None = None) -> None:
         load_dotenv(env_path, override=True)
         logging.info(f".env file loaded from {env_path}")
     else:
-        logging.info(".env file not found, assuming environment variables are already set (e.g. via Docker)")
-
+        logging.info(
+            ".env file not found, assuming environment variables are already set (e.g. via Docker)"
+        )
 
 
 def check_command_exists(command):

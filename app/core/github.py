@@ -30,24 +30,39 @@ logger = logging.getLogger(__name__)
 
 
 class GithubClient:
-    def __init__(self, github_token: SecretStr):
+    """
+    A client for interacting with GitHub, providing functionality for authentication
+    and downloading repositories as zip files.
+    Classes:
+        GithubClient: A class to handle GitHub API interactions.
+    Methods:
+        __init__(github_token: SecretStr | None):
+            Initializes the GithubClient with an optional GitHub token for authentication.
+        _authenticate(github_token: SecretStr | None) -> Github:
+            Authenticates with GitHub using the provided token or anonymous access if no token is provided.
+        download_repo_zip(repo_url: str, branch: str, destination_folder: str) -> str:
+            Downloads a zipball of the specified branch from a GitHub repository URL,
+            extracts it into the destination folder, and returns the path to the extracted folder.
+    """
+
+    def __init__(self, github_token: SecretStr | None):
         self.token = github_token
         self.client = self._authenticate(github_token)
 
-    def _authenticate(self, github_token) -> Github:
+    def _authenticate(self, github_token: SecretStr | None) -> Github:
         try:
             if github_token is None:
                 g = Github()
                 logger.info("No GitHub token provided. Using anonymous access.")
             else:
-                g = Github(github_token)
+                g = Github(github_token.get_secret_value())
                 _ = g.get_rate_limit()
             return g
         except GithubException as e:
             logger.error(f"GitHub authentication failed: {e}")
             raise HTTPException(
                 status_code=HTTPStatus.UNAUTHORIZED, detail="Invalid GitHub token"
-            )
+            ) from e
 
     def download_repo_zip(
         self, repo_url: str, branch: str, destination_folder: str
@@ -87,7 +102,7 @@ class GithubClient:
                 "Accept": "application/vnd.github.v3+json",
             }
             if self.token is not None:
-                headers["Authorization"] = f"token {self.token}"
+                headers["Authorization"] = f"token {self.token.get_secret_value()}"
 
             # Make the GET request with stream enabled.
             response = requests.get(api_url, headers=headers, stream=True, timeout=30)

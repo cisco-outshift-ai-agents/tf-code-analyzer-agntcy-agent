@@ -39,15 +39,18 @@ def get_log_level() -> str:
     return os.getenv("LOG_LEVEL", "INFO").upper()
 
 
-def configure_logging() -> logging.Logger:
+def configure_logging(log_filename: str = "ap_rest_client.log") -> logging.Logger:
     """
     Configures structured JSON logging with rotation.
 
     Logs to both console and a rotating file handler.
     The log level is determined by the LOG_LEVEL environment variable.
+    
+    Parameters:
+        log_filename (str): Name of the log file.
     """
     log_dir = get_log_dir()
-    log_file = log_dir / "ap_rest_client.log"
+    log_file = log_dir / log_filename
     log_level: str = get_log_level()
 
     logger = logging.getLogger()

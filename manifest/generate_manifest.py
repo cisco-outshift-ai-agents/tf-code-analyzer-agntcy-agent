@@ -33,7 +33,7 @@ from agntcy_acp.manifest import (
 # Get the absolute path of the parent directory
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "./.."))
 sys.path.insert(0, parent_dir)
-from app.models.models import RunCreateStateless, RunCreateStatelessOutput, Config
+from app.models.ap.models import RunCreateStateless, RunCreateStatelessOutput, Config
 
 manifest = AgentManifest(
     metadata=AgentMetadata(
