@@ -92,10 +92,10 @@ def run_stateless_runs_post(
         # Retrieve the 'github' field from the input dictionary.
         github_details = input_field.get("github_details")
         if not isinstance(github_details, GithubRequest):
-            logger.info(f"Invalid Github details format: {type(github_details)}")
+            logger.error(f"Invalid Github details format: {type(github_details)}")
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Invalid Github details format: {type(github_details)}",
+                detail="Invalid Github details format",
             )
         github_request = github_details
         logger.info("Github request: %s", github_request)
@@ -185,10 +185,10 @@ async def create_and_wait_for_stateless_run_output(
         # Retrieve the 'github' field from the input dictionary.
         github_details = input_field.get("github_details")
         if not isinstance(github_details, GithubRequest):
-            logger.info(f"Invalid Github details format: {type(github_details)}")
+            logger.error(f"Invalid Github details format: {type(github_details)}")
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Invalid Github details format: {type(github_details)}",
+                detail="Invalid Github details format",
             )
         github_request = github_details
         logger.info("Github request: %s", github_request)
