@@ -209,7 +209,7 @@ def test_runs_endpoint_missing_github_details(test_client_openai):
 
     response = test_client_openai.post("/api/v1/runs", json=invalid_payload)
     assert response.status_code == 422
-    assert "Invalid Github details format" in response.json()["detail"].lower()
+    assert "Invalid Github details format".lower() == response.json()["detail"].lower()
 
 
 @patch("app.core.github.GithubClient.download_repo_zip")
