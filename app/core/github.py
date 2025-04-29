@@ -102,7 +102,7 @@ class GithubClient:
                 "Accept": "application/vnd.github.v3+json",
             }
             if self.token is not None:
-                headers["Authorization"] = f"token {self.token}"
+                headers["Authorization"] = f"token {self.token.get_secret_value()}"
 
             # Make the GET request with stream enabled.
             response = requests.get(api_url, headers=headers, stream=True, timeout=30)

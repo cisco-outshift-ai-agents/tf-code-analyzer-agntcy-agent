@@ -23,28 +23,33 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import SecretStr
 
-from agent_workflow_server.generated.models.content import \
-    Content as SrvContent
-from agent_workflow_server.generated.models.message import \
-    Message as SrvMessage
-from agent_workflow_server.generated.models.run_output import \
-    RunOutput as SrvRunOutput
-from agent_workflow_server.generated.models.run_result import \
-    RunResult as SrvRunResult
-from agent_workflow_server.generated.models.run_stateless import \
-    RunStateless as SrvRunStateless
-from agent_workflow_server.generated.models.run_status import \
-    RunStatus as SrvRunStatus
-from agent_workflow_server.generated.models.run_create_stateless import \
-    RunCreateStateless as SrvRunCreateStateless
-from agent_workflow_server.generated.models.run_wait_response_stateless import \
-    RunWaitResponseStateless as SrvRunWaitResponseStateless
+from agent_workflow_server.generated.models.content import Content as SrvContent
+from agent_workflow_server.generated.models.message import Message as SrvMessage
+from agent_workflow_server.generated.models.run_output import RunOutput as SrvRunOutput
+from agent_workflow_server.generated.models.run_result import RunResult as SrvRunResult
+from agent_workflow_server.generated.models.run_stateless import (
+    RunStateless as SrvRunStateless,
+)
+from agent_workflow_server.generated.models.run_status import RunStatus as SrvRunStatus
+from agent_workflow_server.generated.models.run_create_stateless import (
+    RunCreateStateless as SrvRunCreateStateless,
+)
+from agent_workflow_server.generated.models.run_wait_response_stateless import (
+    RunWaitResponseStateless as SrvRunWaitResponseStateless,
+)
 from app.core.config import INTERNAL_ERROR_MESSAGE, get_llm_chain
 from app.core.github import GithubClient
 from app.graph.graph import StaticAnalyzerWorkflow
-from app.models.ap.models import (Any, ErrorResponse, RunCreateStateless,
-                                  RunCreateStatelessOutput, Union)
+from app.models.ap.models import (
+    Any,
+    ErrorResponse,
+    GithubRequest,
+    RunCreateStateless,
+    RunCreateStatelessOutput,
+    Union,
+)
 
 router = APIRouter(tags=["Stateless Runs"])
 logger = logging.getLogger(__name__)
@@ -85,19 +90,22 @@ def run_stateless_runs_post(
             )
 
         # Retrieve the 'github' field from the input dictionary.
-        github_request = input_field.get("github_details")
-        logger.info("Github request: %s", github_request)
-
-        # Ensure github_request is not empty
-        if not github_request:
-            logger.info("Github details not provided")
+        github_details = input_field.get("github_details")
+        if not isinstance(github_details, GithubRequest):
+            logger.info(f"Invalid Github details format: {type(github_details)}")
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Github details not provided",
+                detail=f"Invalid Github details format: {type(github_details)}",
             )
+        github_request = github_details
+        logger.info("Github request: %s", github_request)
 
         # Initialize the Github client and download the repository.
-        github_client = GithubClient(github_request.github_token)
+        github_client = GithubClient(
+            SecretStr(github_request.github_token)
+            if github_request.github_token
+            else None
+        )
         try:
             file_path = github_client.download_repo_zip(
                 repo_url=github_request.repo_url,
@@ -124,7 +132,8 @@ def run_stateless_runs_post(
         logger.error("Internal error during run processing: %s", exc, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=INTERNAL_ERROR_MESSAGE,
+            # detail=INTERNAL_ERROR_MESSAGE,
+            detail=exc
         ) from exc
 
     payload = {
@@ -174,24 +183,26 @@ async def create_and_wait_for_stateless_run_output(
             )
 
         # Retrieve the 'github' field from the input dictionary.
-        github_request = input_field.get("github_details")
-        logger.info("Github request: %s", github_request)
-
-        # Ensure github_request is not empty
-        if not github_request:
-            logger.info("Github details not provided")
+        github_details = input_field.get("github_details")
+        if not isinstance(github_details, GithubRequest):
+            logger.info(f"Invalid Github details format: {type(github_details)}")
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Github details not provided",
+                detail=f"Invalid Github details format: {type(github_details)}",
             )
+        github_request = github_details
+        logger.info("Github request: %s", github_request)
 
         # Initialize the Github client and download the repository.
-        github_token = github_request.get("github_token")
-        github_client = GithubClient(github_token)
+        github_client = GithubClient(
+            SecretStr(github_request.github_token)
+            if github_request.github_token
+            else None
+        )
         try:
             file_path = github_client.download_repo_zip(
-                repo_url=github_request.get("repo_url"),
-                branch=github_request.get("branch"),
+                repo_url=github_request.repo_url,
+                branch=github_request.branch,
                 destination_folder=settings.DESTINATION_FOLDER,
             )
         except Exception as e:
@@ -205,9 +216,7 @@ async def create_and_wait_for_stateless_run_output(
         workflow = StaticAnalyzerWorkflow(chain=get_llm_chain(settings))
         result = workflow.analyze(file_path)
         # Build WrkFlow Srv Run Output
-        message = SrvMessage(
-            role="ai", content=SrvContent(json.dumps(result))
-        )
+        message = SrvMessage(role="ai", content=SrvContent(json.dumps(result)))
         run_result = SrvRunResult(type="result", values=result, messages=[message])
         run_output = SrvRunOutput(run_result)
         logger.info(result)
@@ -231,7 +240,4 @@ async def create_and_wait_for_stateless_run_output(
         status=SrvRunStatus.SUCCESS,
         creation=body,
     )
-    return SrvRunWaitResponseStateless(
-        run=run_stateless,
-        output=run_output
-    )
+    return SrvRunWaitResponseStateless(run=run_stateless, output=run_output)
