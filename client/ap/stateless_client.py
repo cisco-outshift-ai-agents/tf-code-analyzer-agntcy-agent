@@ -68,7 +68,7 @@ def fetch_github_environment_variables() -> Dict[str, str | None]:
     github_details = {
         "repo_url": os.getenv("GH_REPO_URL"),
         "github_token": os.getenv("GH_TOKEN"),
-        "branch": os.getenv("GH_BRANCH"),
+        "branch": os.getenv("GH_BRANCH", "main"),
     }
     return github_details
 
