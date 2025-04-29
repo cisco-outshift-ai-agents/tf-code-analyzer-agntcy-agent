@@ -248,6 +248,5 @@ async def main() -> None:
     # Launch REST server and AGP client in parallel
     await asyncio.gather(serve_rest(app, settings), agp_connect(app, settings))
 
-
 if __name__ == "__main__":
     asyncio.run(main())
