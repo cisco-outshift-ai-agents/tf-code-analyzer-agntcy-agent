@@ -35,9 +35,15 @@ run: ## Run the application
 	@echo "Starting TF Code Analyzer Agent..."
 	@$(PYTHON) app/main.py
 
+ifeq ($(OS),Windows_NT)
 test: install-test ## Run tests
 	@echo "Running tests..."
-	@PYTHONPATH=$(PWD) pytest tests/ -v
+	@set PYTHONPATH=%CD% && pytest tests/ -v
+else
+test: install-test ## Run tests
+	@echo "Running tests..."
+	@PYTHONPATH=$(shell pwd) pytest tests/ -v
+endif
 
 docker-up: ## Start services with docker-compose
 	@echo "Starting services with docker-compose..."
