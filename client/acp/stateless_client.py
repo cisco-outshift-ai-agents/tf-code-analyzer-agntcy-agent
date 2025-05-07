@@ -158,7 +158,7 @@ def main():
 
     result = graph.invoke(graph_input)
 
-    logger.error(
+    logger.info(
         {
             "event": "final_result",
             "result": result.get("static_analyzer_output", result),

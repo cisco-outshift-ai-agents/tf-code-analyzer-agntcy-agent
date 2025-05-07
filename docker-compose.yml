@@ -21,6 +21,7 @@ services:
     environment:
       - TF_CODE_ANALYZER_HOST=0.0.0.0
       - TF_CODE_ANALYZER_PORT=8133
+      - ACP_TF_CODE_ANALYZER_HOST=http://127.0.0.1:8123/api/v1
       - AGP_GATEWAY_ENDPOINT=http://agp-gateway:46357
       # Azure OpenAI Configuration
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}

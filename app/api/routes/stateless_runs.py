@@ -23,7 +23,7 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 
 from agent_workflow_server.generated.models.content import Content as SrvContent
 from agent_workflow_server.generated.models.message import Message as SrvMessage
@@ -184,13 +184,13 @@ async def create_and_wait_for_stateless_run_output(
 
         # Retrieve the 'github' field from the input dictionary.
         github_details = input_field.get("github_details")
-        if not isinstance(github_details, GithubRequest):
-            logger.error(f"Invalid Github details format: {type(github_details)}")
+        try:
+            github_request = GithubRequest.model_validate(github_details)
+        except ValidationError as e:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid Github details format",
-            )
-        github_request = github_details
+                detail=f"Validation failed: {e}",
+            ) from e        
         logger.info("Github request: %s", github_request)
 
         # Initialize the Github client and download the repository.
