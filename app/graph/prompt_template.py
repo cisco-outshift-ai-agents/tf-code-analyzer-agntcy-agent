@@ -26,6 +26,7 @@ def create_static_analyzer_prompt_template() -> ChatPromptTemplate:
                                             Your are an experienced software engineer who's task is to organize Terraform related linter outputs.
                                             Remove ONLY the line numbers but keep everything else, don't remove any detail from the issue message.
                                             Remove the warnings, only keep the errors in the final list.
+                                            Each item in the list should have the following format: {{file name}}: {{full issue description}}
                                              """)
 
     user_message_content = wrap_prompt("""
