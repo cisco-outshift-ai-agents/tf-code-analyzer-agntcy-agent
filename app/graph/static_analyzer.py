@@ -20,12 +20,51 @@ import shutil
 from subprocess import PIPE, CalledProcessError, run
 from typing import Any
 
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableSerializable
-
+from app.models.ap.models import StaticAnalyzerOutputList, StaticAnalyzerInput
 from app.core.utils import check_path_type, extract_zipfile
 
 from app.graph.prompt_template import create_static_analyzer_prompt_template, wrap_prompt
 
+
+def checkTofuFiles(output_folder) -> list[str]:
+    # Check for tofu files in the output folder
+    if os.path.isdir(output_folder):
+        files_with_extension = [f for f in os.listdir(output_folder) if f.endswith(".tofu") or f.endswith(".tofuvars")]
+        return files_with_extension
+    return []
+
+
+def convertFileExtension(output_folder, tofu_files) -> dict:
+    # Convert the extension from .tofu/.tofuvars to .tf/.tfvars
+    file_rename_map = {}
+    new_filename = ""
+    for files in tofu_files:
+        if files.endswith(".tofu"):
+            old_path = os.path.join(output_folder, files)
+            new_filename = "modified_" + os.path.splitext(files)[0] + ".tf"
+            new_path = os.path.join(output_folder, new_filename)
+            os.rename(old_path, new_path)
+        elif files.endswith(".tofuvars"):
+            old_path = os.path.join(output_folder, files)
+            new_filename = "modified_" + os.path.splitext(files)[0] + ".tfvars"
+            new_path = os.path.join(output_folder, new_filename)
+            os.rename(old_path, new_path)
+        file_rename_map[files] = new_filename
+    return file_rename_map
+
+
+def modifyresponse(file_rename_map, response) -> str:
+    modified_output = ""
+    if response == "":
+        return ""
+    for old_filename, new_filename in file_rename_map.items():
+        if not modified_output:
+            modified_output = response.replace(new_filename, old_filename)
+        else:
+            modified_output = modified_output.replace(new_filename, old_filename)
+    return modified_output
 
 class StaticAnalyzer:
     """
@@ -76,6 +115,11 @@ class StaticAnalyzer:
             )
 
         try:
+            file_rename_map = {}
+            # Check for the tofu files in the repo
+            tofu_files = checkTofuFiles(output_folder)
+            if tofu_files:
+                file_rename_map = convertFileExtension(output_folder, tofu_files)
             tf_validate_out = run(
                 ["terraform", "validate", "-no-color"],
                 cwd=output_folder,
@@ -121,6 +165,21 @@ class StaticAnalyzer:
                 return {}
 
         try:
+            if file_rename_map:
+                # Replace all the modified file names in  tf_validate output, error, lint output
+                tf_validate_output = modifyresponse(file_rename_map, tf_validate_out.stdout)
+                tf_validate_error = modifyresponse(file_rename_map, tf_validate_out.stderr)
+                tf_lint_output = modifyresponse(file_rename_map, lint_stdout)
+                tf_lint_error = modifyresponse(file_rename_map, lint_stderr)
+            else:
+                tf_validate_output = tf_validate_out.stdout
+                tf_validate_error = tf_validate_out.stderr
+                tf_lint_output = lint_stdout
+                tf_lint_error = lint_stderr
+            staticanalyzerinput = StaticAnalyzerInput(tf_validate_out_stderr=tf_validate_error,
+                                                      tf_validate_out_stdout=tf_validate_output,
+                                                      tflint_output_stderr=tf_lint_error,
+                                                      tflint_output_stdout=tf_lint_output)
             prompt_template = create_static_analyzer_prompt_template()
             prompt = prompt_template.invoke(
                 {
@@ -135,7 +194,9 @@ class StaticAnalyzer:
                     )
                 }
             )
-            response = self.chain.invoke(prompt)
+            self.chain.model.with_structured_output(StaticAnalyzerOutputList)
+            response = StaticAnalyzerOutputList.parse_raw(self.chain.invoke(prompt))
+            print(response)
 
         except Exception as e:
             log.error(
@@ -143,4 +204,4 @@ class StaticAnalyzer:
             )
             raise e
 
-        return {"static_analyzer_output": response.content}
+        return {"static_analyzer_output": response}
