@@ -15,42 +15,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.language_models import BaseChatModel
 from app.models.ap.models import StaticAnalyzerOutputList
 from langchain_core.runnables import RunnableSerializable
-from typing import cast
+
 """
 This function creates a prompt template for the static analyzer agent which is responsible for organizing Terraform related linter outputs.
 """
 
 
-# def create_static_analyzer_prompt_template() -> ChatPromptTemplate:
-#     system_message_content = wrap_prompt("""\
-#                                             Your are an experienced software engineer who's task is to organize Terraform related linter outputs.
-#                                             Remove ONLY the line numbers but keep everything else, don't remove any detail from the issue message.
-#                                             Remove the warnings, only keep the errors in the final list.
-#                                             Each item in the list should have the following format: {{file name}}: {{full issue description}}
-#                                              """)
-#
-#     user_message_content = wrap_prompt("""
-#                                        Input Format:
-#                                        The terraform linter output: {linter_outputs}
-#                                        """)
-#
-#     prompt = ChatPromptTemplate.from_messages(
-#         [
-#             (
-#                 "system",
-#                 system_message_content,
-#             ),
-#             "user", user_message_content,
-#         ]
-#     )
-#
-#     return prompt
-
-
-def create_static_analyzer_chain(model: RunnableSerializable) -> RunnableSerializable[dict, dict | StaticAnalyzerOutputList]:
+def create_static_analyzer_chain(model: RunnableSerializable) -> RunnableSerializable[
+    dict, dict | StaticAnalyzerOutputList]:
     llm_with_structured_output = model.with_structured_output(StaticAnalyzerOutputList)
     system_message_content = wrap_prompt("""\
                                         Your are an experienced software engineer who's task is to organize Terraform related linter outputs.
