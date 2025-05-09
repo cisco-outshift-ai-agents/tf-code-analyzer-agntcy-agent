@@ -194,7 +194,6 @@ class StaticAnalyzer:
                     )
                 }
             )
-            self.chain.model.with_structured_output(StaticAnalyzerOutputList)
             response = StaticAnalyzerOutputList.parse_raw(self.chain.invoke(prompt))
             print(response)
 
