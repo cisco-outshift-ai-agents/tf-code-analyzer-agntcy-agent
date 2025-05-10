@@ -22,14 +22,6 @@ from langchain_core.runnables import RunnableSerializable
 This function creates a prompt template for the static analyzer agent which is responsible for organizing Terraform related linter outputs.
 """
 
-class StaticAnalyzerOutputIssues(BaseModel):
-    file_name: str = Field(description="This is the filename which has terraform linter issues")
-    full_issue_description: str = Field(description="This is the full description of terraform linter issue")
-
-
-class StaticAnalyzerOutputList(BaseModel):
-    issues: List[StaticAnalyzerOutputIssues] = Field(description="List of terraform linter issues found")
-
 
 def create_static_analyzer_chain(model: RunnableSerializable) -> RunnableSerializable[
     dict, dict | StaticAnalyzerOutputList]:
