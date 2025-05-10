@@ -18,21 +18,14 @@ import logging as log
 import os
 import shutil
 from subprocess import PIPE, CalledProcessError, run
-from typing import Any, List
+from typing import Any
+
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableSerializable
+from app.models.ap.models import StaticAnalyzerOutputList
 from app.core.utils import check_path_type, extract_zipfile
 
-from app.graph.prompt_template import create_static_analyzer_chain, wrap_prompt
-from pydantic import BaseModel, Field
-
-
-class StaticAnalyzerOutputIssues(BaseModel):
-    file_name: str = Field(description="This is the filename which has terraform linter issues")
-    full_issue_description: str = Field(description="This is the full description of terraform linter issue")
-
-
-class StaticAnalyzerOutputList(BaseModel):
-    issues: List[StaticAnalyzerOutputIssues] = Field(description="List of terraform linter issues found")
+from app.graph.prompt_template import create_static_analyzer_prompt_template, wrap_prompt
 
 
 def checkTofuFiles(output_folder) -> list[str]:
@@ -62,7 +55,7 @@ def convertFileExtension(output_folder, tofu_files) -> dict:
     return file_rename_map
 
 
-def modifyResponse(file_rename_map, response) -> str:
+def modifyresponse(file_rename_map, response) -> str:
     modified_output = ""
     if response == "":
         return ""
@@ -72,7 +65,6 @@ def modifyResponse(file_rename_map, response) -> str:
         else:
             modified_output = modified_output.replace(new_filename, old_filename)
     return modified_output
-
 
 class StaticAnalyzer:
     """
@@ -175,35 +167,35 @@ class StaticAnalyzer:
         try:
             if file_rename_map:
                 # Replace all the modified file names in  tf_validate output, error, lint output
-                tf_validate_output = modifyResponse(file_rename_map, tf_validate_out.stdout)
-                tf_validate_error = modifyResponse(file_rename_map, tf_validate_out.stderr)
-                tf_lint_output = modifyResponse(file_rename_map, lint_stdout)
-                tf_lint_error = modifyResponse(file_rename_map, lint_stderr)
+                tf_validate_output = modifyresponse(file_rename_map, tf_validate_out.stdout)
+                tf_validate_error = modifyresponse(file_rename_map, tf_validate_out.stderr)
+                tf_lint_output = modifyresponse(file_rename_map, lint_stdout)
+                tf_lint_error = modifyresponse(file_rename_map, lint_stderr)
             else:
                 tf_validate_output = tf_validate_out.stdout
                 tf_validate_error = tf_validate_out.stderr
                 tf_lint_output = lint_stdout
                 tf_lint_error = lint_stderr
-            prompt_template = create_static_analyzer_chain(self.chain)
-            response: StaticAnalyzerOutputList = prompt_template.invoke({
-                "linter_outputs": wrap_prompt(
-                    "terraform validate output:",
-                    f"{tf_validate_error}",
-                    f"{tf_validate_output}",
-                    "",
-                    "tflint output:",
-                    f"{tf_lint_error}",
-                    f"{tf_lint_output}",
-                )}
+            prompt_template = create_static_analyzer_prompt_template()
+            prompt = prompt_template.invoke(
+                {
+                    "linter_outputs": wrap_prompt(
+                        "terraform validate output:",
+                        f"{tf_validate_error}",
+                        f"{tf_validate_output}",
+                        "",
+                        "tflint output:",
+                        f"{tf_lint_error}",
+                        f"{tf_lint_output}",
+                    )
+                }
             )
-            static_analyzer_response = []
-            if isinstance(response, StaticAnalyzerOutputList):
-                static_analyzer_response = [f"{res.file_name}: {res.full_issue_description}" for res in
-                                            response.issues]
+            response = self.chain.invoke(prompt)
+            print(response)
         except Exception as e:
             log.error(
                 f"Error in {self.name} while running the static analyzer chain: {e}"
             )
             raise e
 
-        return {"static_analyzer_output": static_analyzer_response}
+        return {"static_analyzer_output": response.content}
