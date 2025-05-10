@@ -15,7 +15,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from langchain_core.prompts import ChatPromptTemplate
-from app.graph.static_analyzer import StaticAnalyzerOutputList
+from app.models.ap.models import StaticAnalyzerOutputList
 from langchain_core.runnables import RunnableSerializable
 
 """
