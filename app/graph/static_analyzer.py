@@ -22,7 +22,7 @@ from typing import Any, List
 from langchain_core.runnables import RunnableSerializable
 from app.core.utils import check_path_type, extract_zipfile
 
-from app.graph.prompt_template import create_static_analyzer_chain, wrap_prompt
+from app.graph.prompt_template import create_static_analyzer_chain, wrap_prompt, StaticAnalyzerOutputList
 from pydantic import BaseModel, Field
 
 
@@ -176,7 +176,7 @@ class StaticAnalyzer:
                 tf_lint_output = lint_stdout
                 tf_lint_error = lint_stderr
             prompt_template = create_static_analyzer_chain(self.chain)
-            response = prompt_template.invoke({
+            response: StaticAnalyzerOutputList = prompt_template.invoke({
                 "linter_outputs": wrap_prompt(
                     "terraform validate output:",
                     f"{tf_validate_error}",
@@ -188,7 +188,8 @@ class StaticAnalyzer:
                 )}
             )
             static_analyzer_response = []
-            static_analyzer_response = [f"{res.file_name}: {res.full_issue_description}" for res in
+            if isinstance(response, StaticAnalyzerOutputList):
+                static_analyzer_response = [f"{res.file_name}: {res.full_issue_description}" for res in
                                             response.issues]
         except Exception as e:
             log.error(

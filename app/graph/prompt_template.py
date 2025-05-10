@@ -15,9 +15,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from langchain_core.prompts import ChatPromptTemplate
+from app.graph.static_analyzer import StaticAnalyzerOutputList
 from langchain_core.runnables import RunnableSerializable
-from pydantic import BaseModel, Field
-from typing import List
+
 """
 This function creates a prompt template for the static analyzer agent which is responsible for organizing Terraform related linter outputs.
 """
