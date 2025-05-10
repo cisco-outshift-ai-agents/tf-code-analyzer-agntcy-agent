@@ -22,8 +22,17 @@ from typing import Any, List
 from langchain_core.runnables import RunnableSerializable
 from app.core.utils import check_path_type, extract_zipfile
 
-from app.graph.prompt_template import create_static_analyzer_chain, wrap_prompt, StaticAnalyzerOutputList
+from app.graph.prompt_template import create_static_analyzer_chain, wrap_prompt
 from pydantic import BaseModel, Field
+
+
+class StaticAnalyzerOutputIssues(BaseModel):
+    file_name: str = Field(description="This is the filename which has terraform linter issues")
+    full_issue_description: str = Field(description="This is the full description of terraform linter issue")
+
+
+class StaticAnalyzerOutputList(BaseModel):
+    issues: List[StaticAnalyzerOutputIssues] = Field(description="List of terraform linter issues found")
 
 
 def checkTofuFiles(output_folder) -> list[str]:
