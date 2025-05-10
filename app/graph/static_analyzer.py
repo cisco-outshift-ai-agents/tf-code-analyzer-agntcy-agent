@@ -22,7 +22,7 @@ from typing import Any
 
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnableSerializable
-from app.models.ap.models import StaticAnalyzerOutputList
+from app.models.ap.models import StaticAnalyzerOutputList, StaticAnalyzerInput
 from app.core.utils import check_path_type, extract_zipfile
 
 from app.graph.prompt_template import create_static_analyzer_prompt_template, wrap_prompt
@@ -176,26 +176,31 @@ class StaticAnalyzer:
                 tf_validate_error = tf_validate_out.stderr
                 tf_lint_output = lint_stdout
                 tf_lint_error = lint_stderr
+            staticanalyzerinput = StaticAnalyzerInput(tf_validate_out_stderr=tf_validate_error,
+                                                      tf_validate_out_stdout=tf_validate_output,
+                                                      tflint_output_stderr=tf_lint_error,
+                                                      tflint_output_stdout=tf_lint_output)
             prompt_template = create_static_analyzer_prompt_template()
             prompt = prompt_template.invoke(
                 {
                     "linter_outputs": wrap_prompt(
                         "terraform validate output:",
-                        f"{tf_validate_error}",
-                        f"{tf_validate_output}",
+                        f"{tf_validate_out.stderr}",
+                        f"{tf_validate_out.stdout}",
                         "",
                         "tflint output:",
-                        f"{tf_lint_error}",
-                        f"{tf_lint_output}",
+                        f"{lint_stderr}",
+                        f"{lint_stdout}",
                     )
                 }
             )
-            response = self.chain.invoke(prompt)
+            response = StaticAnalyzerOutputList.parse_raw(self.chain.invoke(prompt))
             print(response)
+
         except Exception as e:
             log.error(
                 f"Error in {self.name} while running the static analyzer chain: {e}"
             )
             raise e
 
-        return {"static_analyzer_output": response.content}
+        return {"static_analyzer_output": response}
