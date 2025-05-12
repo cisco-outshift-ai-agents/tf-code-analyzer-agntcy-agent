@@ -196,4 +196,4 @@ class StaticAnalyzer:
             )
             raise e
 
-        return {"static_analyzer_output": static_analyzer_response}
+        return {"static_analyzer_output": ",".join(static_analyzer_response)}
