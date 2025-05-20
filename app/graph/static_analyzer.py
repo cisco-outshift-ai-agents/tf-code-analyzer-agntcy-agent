@@ -202,9 +202,9 @@ class StaticAnalyzer:
                     f"{tf_lint_output}",
                 )}
             )
-            static_analyzer_response = []
             static_analyzer_response = [f"{res.file_name}: {res.full_issue_description}" for res in
-                                            response.issues]
+                                        response.issues]
+            log.info("The Static Analyzer output is", static_analyzer_response)
 
         except Exception as e:
             log.error(
