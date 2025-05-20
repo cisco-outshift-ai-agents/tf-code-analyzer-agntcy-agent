@@ -147,13 +147,6 @@ class StaticAnalyzer:
                         capture_output=True,
                         text=True,
                     )
-                run(
-                    ["terraform", "init", "-backend=false"],
-                    check=True,
-                    cwd=output_folder,
-                    capture_output=True,
-                    text=True,
-                )
                 tflint_out = run(
                     ["tflint", "--format=compact", "--recursive"],
                     cwd=output_folder,
