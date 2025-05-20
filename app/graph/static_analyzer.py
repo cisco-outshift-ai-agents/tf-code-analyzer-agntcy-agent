@@ -138,7 +138,6 @@ class StaticAnalyzer:
                     capture_output=True,
                     text=True,
                 )
-
                 tflint_out = run(
                     ["tflint", "--format=compact", "--recursive"],
                     cwd=output_folder,
@@ -187,7 +186,6 @@ class StaticAnalyzer:
                     f"{tf_lint_output}",
                 )}
             )
-            static_analyzer_response = []
             static_analyzer_response = [f"{res.file_name}: {res.full_issue_description}" for res in
                                             response.issues]
         except Exception as e:
