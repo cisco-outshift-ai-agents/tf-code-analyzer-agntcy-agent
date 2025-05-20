@@ -205,8 +205,6 @@ class StaticAnalyzer:
             static_analyzer_response = []
             static_analyzer_response = [f"{res.file_name}: {res.full_issue_description}" for res in
                                             response.issues]
-            if not static_analyzer_response:
-                static_analyzer_response = ["No issues found"]
 
         except Exception as e:
             log.error(
