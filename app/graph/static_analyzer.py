@@ -118,7 +118,15 @@ class StaticAnalyzer:
             # Check for the tofu files in the repo
             tofu_files = checkTofuFiles(output_folder)
             if tofu_files:
-                file_rename_map = convertFileExtension(output_folder, tofu_files)
+                file_rename_map = convertFileExtension(output_folder, tofu_files)g
+            if not os.path.isfile(os.path.join(output_folder, ".terraform.lock.hcl")):
+                run(
+                    ["terraform", "init", "-backend=false"],
+                    check=True,
+                    cwd=output_folder,
+                    capture_output=True,
+                    text=True,
+                )
             tf_validate_out = run(
                 ["terraform", "validate", "-no-color"],
                 cwd=output_folder,
@@ -131,6 +139,14 @@ class StaticAnalyzer:
             if tf_validate_out.returncode == 0:
                 # Need tf init to download the necessary third party
                 # dependencies, otherwise most linters would fail
+                if not os.path.isfile(os.path.join(output_folder, ".terraform.lock.hcl")):
+                    run(
+                        ["terraform", "init", "-backend=false"],
+                        check=True,
+                        cwd=output_folder,
+                        capture_output=True,
+                        text=True,
+                    )
                 run(
                     ["terraform", "init", "-backend=false"],
                     check=True,
@@ -138,14 +154,7 @@ class StaticAnalyzer:
                     capture_output=True,
                     text=True,
                 )
-
-                tflint_out = run(
-                    ["tflint", "--format=compact", "--recursive"],
-                    cwd=output_folder,
-                    stdout=PIPE,
-                    stderr=PIPE,
-                    text=True,
-                )
+                tflint_out = run(["tflint", "--format=compact", "--recursive"],cwd=output_folder,stdout=PIPE,stderr=PIPE,text=True,)
                 lint_stdout = tflint_out.stdout
                 lint_stderr = tflint_out.stderr
         except CalledProcessError as e:
@@ -190,6 +199,9 @@ class StaticAnalyzer:
             static_analyzer_response = []
             static_analyzer_response = [f"{res.file_name}: {res.full_issue_description}" for res in
                                             response.issues]
+            if not static_analyzer_response:
+                static_analyzer_response = ["No issues found"]
+
         except Exception as e:
             log.error(
                 f"Error in {self.name} while running the static analyzer chain: {e}"
