@@ -154,7 +154,13 @@ class StaticAnalyzer:
                     capture_output=True,
                     text=True,
                 )
-                tflint_out = run(["tflint", "--format=compact", "--recursive"],cwd=output_folder,stdout=PIPE,stderr=PIPE,text=True,)
+                tflint_out = run(
+                    ["tflint", "--format=compact", "--recursive"],
+                    cwd=output_folder,
+                    stdout=PIPE,
+                    stderr=PIPE,
+                    text=True,
+                )
                 lint_stdout = tflint_out.stdout
                 lint_stderr = tflint_out.stderr
         except CalledProcessError as e:
