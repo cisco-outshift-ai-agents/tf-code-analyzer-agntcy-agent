@@ -118,7 +118,7 @@ class StaticAnalyzer:
             # Check for the tofu files in the repo
             tofu_files = checkTofuFiles(output_folder)
             if tofu_files:
-                file_rename_map = convertFileExtension(output_folder, tofu_files)g
+                file_rename_map = convertFileExtension(output_folder, tofu_files)
             if not os.path.isfile(os.path.join(output_folder, ".terraform.lock.hcl")):
                 run(
                     ["terraform", "init", "-backend=false"],
