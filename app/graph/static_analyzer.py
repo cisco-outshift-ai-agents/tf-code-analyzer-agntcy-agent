@@ -126,7 +126,6 @@ class StaticAnalyzer:
                 stderr=PIPE,
                 text=True,
             )
-            log.info("The terraform validate output", tf_validate_out.stderr)
             if tf_validate_out.returncode == 1 and "terraform init" in tf_validate_out.stderr:
                 # The directory expects terraform init to run so
                 run(
@@ -175,7 +174,7 @@ class StaticAnalyzer:
                 log.debug("Repo deleted successfully")
             except Exception as e:
                 log.error(
-                    f"An error occured while removing the local copy of the repo: {e}"
+                    f"An error occurred while removing the local copy of the repo: {e}"
                 )
                 return {}
 
