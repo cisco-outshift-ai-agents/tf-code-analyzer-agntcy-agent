@@ -87,6 +87,7 @@ class StaticAnalyzerWorkflow:
         """
         try:
             result = self.graph.invoke({"file_path": context_files})
+            logging.info(result['static_analyzer_output'])
         except Exception as e:
             raise Exception(f"Terraform analysis failed: {e}")
 
