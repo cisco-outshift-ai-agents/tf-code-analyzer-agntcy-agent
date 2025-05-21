@@ -182,7 +182,7 @@ class StaticAnalyzer:
                 tf_lint_output = tf_lint_stdout
                 tf_lint_error = tf_lint_stderr
             prompt_template = create_static_analyzer_chain(self.chain)
-            response = self._context.chain.invoke(
+            response = prompt_template.invoke(
                 {
                     "linter_outputs": wrap_prompt(
                         "terraform init output:",
